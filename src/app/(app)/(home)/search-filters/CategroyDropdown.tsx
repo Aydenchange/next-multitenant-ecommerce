@@ -4,8 +4,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import SubCategoryMenu from "./SubCategoryMenu";
+import { CategoryNavItem } from "./types";
 
-export default function CategroyDropdown({ category }: { category: any }) {
+export default function CategroyDropdown({
+  category,
+}: {
+  category: CategoryNavItem;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const hasSubcategories = (category.subcategories?.length ?? 0) > 0;
 

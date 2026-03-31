@@ -4,6 +4,7 @@ import { Category } from "@/payload-types";
 
 import Categories from "./Categories";
 import SearchInput from "./SearchInput";
+import { CategoryNavItem } from "./types";
 
 export default async function SearchFilters() {
   const payload = await getPayload({
@@ -22,13 +23,18 @@ export default async function SearchFilters() {
   });
 
   const formattedData = data.docs.map((doc) => ({
-    ...doc,
-    subcategories: (doc.subcategories?.docs ?? []).map((doc) => ({
-      // Because of "depth: 1" we are confident "doc" will be a type of "Category"
-      ...(doc as Category),
-      subcategories: undefined,
-    })),
-  }));
+    id: doc.id,
+    name: doc.name,
+    slug: doc.slug,
+    color: doc.color ?? null,
+    subcategories: (doc.subcategories?.docs ?? [])
+      .filter((item): item is Category => typeof item !== "string")
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        slug: item.slug,
+      })),
+  })) satisfies CategoryNavItem[];
 
   return (
     <div className="mt-4 px-4 lg:px-12 py-8 border-b flex flex-col gap-4 w-full">

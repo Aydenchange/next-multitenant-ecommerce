@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import CategroyDropdown from "./CategroyDropdown";
 import { ListFilterIcon } from "lucide-react";
 import CategoriesSidebar from "./CategoriesSidebar";
+import { CategoryNavItem } from "./types";
 
 const GAP = 8; // gap-2 = 8px
 
 export default function Categories({
   data,
 }: Readonly<{
-  data: any;
+  data: CategoryNavItem[];
 }>) {
   const outerRef = useRef<HTMLDivElement>(null); // watches for resize
   const innerRef = useRef<HTMLDivElement>(null); // hidden layer for measuring
@@ -85,7 +86,7 @@ export default function Categories({
 
       {/* Visible layer — only the first visibleCount items */}
       <div className=" flex flex-nowrap items-center gap-2 min-w-0 ">
-        {data.slice(0, visibleCount).map((item: any) => (
+        {data.slice(0, visibleCount).map((item) => (
           <CategroyDropdown key={item.id} category={item} />
         ))}
       </div>
