@@ -1,20 +1,15 @@
 import Link from "next/link";
 
 export default function SubCategoryMenu({
-  isOpen,
   subcategories,
   color,
 }: {
-  isOpen: boolean;
   subcategories: Array<{ id: string; name: string }>;
   color?: string;
 }) {
-  if (!isOpen) {
-    return null;
-  }
   return (
     <div
-      className="absolute left-0 top-full  min-w-40 rounded-md p-2 shadow-md z-50"
+      className="absolute left-0 top-full z-50  min-w-full w-max rounded-md p-2 shadow-md"
       style={{ backgroundColor: color }}
     >
       {subcategories.map((sub) => (

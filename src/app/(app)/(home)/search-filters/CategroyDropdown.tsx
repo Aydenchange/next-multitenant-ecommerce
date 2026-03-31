@@ -7,26 +7,32 @@ import SubCategoryMenu from "./SubCategoryMenu";
 
 export default function CategroyDropdown({ category }: { category: any }) {
   const [isOpen, setIsOpen] = useState(false);
+  const hasSubcategories = (category.subcategories?.length ?? 0) > 0;
 
   return (
     <div
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
-      className="relative inline-block"
+      className="relative flex-none"
     >
       <Button
         variant="elevated"
-        style={isOpen ? { backgroundColor: category.color } : {}}
-        className={isOpen ? "text-white" : ""}
+        style={
+          isOpen && category.color
+            ? { backgroundColor: category.color }
+            : undefined
+        }
+        className={isOpen && hasSubcategories ? "text-white" : ""}
       >
         {category.name}
       </Button>
 
-      <SubCategoryMenu
-        isOpen={isOpen}
-        subcategories={category.subcategories}
-        color={category.color}
-      />
+      {isOpen && hasSubcategories && (
+        <SubCategoryMenu
+          subcategories={category.subcategories ?? []}
+          color={category.color ?? undefined}
+        />
+      )}
     </div>
   );
 }
