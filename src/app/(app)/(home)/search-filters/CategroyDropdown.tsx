@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+
 import SubCategoryMenu from "./SubCategoryMenu";
 
 export default function CategroyDropdown({ category }: { category: any }) {
@@ -10,15 +12,21 @@ export default function CategroyDropdown({ category }: { category: any }) {
     <div
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
-      className="flex gap-4"
+      className="relative inline-block"
     >
-      <div>{category.name}</div>
-      <div>
-        <SubCategoryMenu
-          isOpen={isOpen}
-          subcategories={category.subcategories}
-        />
-      </div>
+      <Button
+        variant="elevated"
+        style={isOpen ? { backgroundColor: category.color } : {}}
+        className={isOpen ? "text-white" : ""}
+      >
+        {category.name}
+      </Button>
+
+      <SubCategoryMenu
+        isOpen={isOpen}
+        subcategories={category.subcategories}
+        color={category.color}
+      />
     </div>
   );
 }

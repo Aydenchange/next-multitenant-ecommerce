@@ -31,7 +31,7 @@ export default async function SearchFilters() {
   }));
 
   return (
-    <div>
+    <div className="mt-4 px-4 lg:px-12 py-8 border-b flex flex-col gap-4 w-full">
       <SearchInput />
       <Categories data={formattedData} />
     </div>
