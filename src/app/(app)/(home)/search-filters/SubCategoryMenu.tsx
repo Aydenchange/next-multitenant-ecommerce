@@ -1,17 +1,26 @@
+import Link from "next/link";
+import { CategoryLinkItem, toCategoryHref } from "./types";
+
 export default function SubCategoryMenu({
-  isOpen,
   subcategories,
+  color,
 }: {
-  isOpen: boolean;
-  subcategories: any;
+  subcategories: CategoryLinkItem[];
+  color?: string;
 }) {
-  if (!isOpen) {
-    return null;
-  }
   return (
-    <div>
-      {subcategories.map((sub: any) => (
-        <div key={sub.id}>{sub.name}</div>
+    <div
+      className="absolute left-0 top-full z-50  min-w-full w-max rounded-md p-2 shadow-md"
+      style={{ backgroundColor: color }}
+    >
+      {subcategories.map((sub) => (
+        <Link
+          key={sub.id}
+          href={toCategoryHref(sub.slug)}
+          className="w-full text-left p-4 hover:bg-black hover:text-white flex justify-between items-center underline font-medium"
+        >
+          {sub.name}
+        </Link>
       ))}
     </div>
   );
