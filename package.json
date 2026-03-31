@@ -2,11 +2,14 @@
   "name": "next-multitenant-ecommerce",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:types": "payload generate:types",
+    "db:fresh": "payload migrate:fresh"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
