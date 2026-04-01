@@ -6,27 +6,15 @@ import CategroyDropdown from "./CategroyDropdown";
 import { ListFilterIcon } from "lucide-react";
 import CategoriesSidebar from "./CategoriesSidebar";
 import { CategoryNavItem } from "./types";
-import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
 
 const GAP = 8; // gap-2 = 8px
 
-export default function Categories({
-  data,
-}: Readonly<{
-  data: CategoryNavItem[];
-}>) {
+export default function Categories({ data }: { data: CategoryNavItem[] }) {
   const outerRef = useRef<HTMLDivElement>(null); // watches for resize
   const innerRef = useRef<HTMLDivElement>(null); // hidden layer for measuring
   const viewRef = useRef<HTMLDivElement>(null); // "View All" button
-  const [visibleCount, setVisibleCount] = useState<number>(data.length);
+  const [visibleCount, setVisibleCount] = useState<number>(0);
   const [openSidebar, setOpenSidebar] = useState(false);
-
-  const trpc = useTRPC();
-  const { data: helloData } = useQuery(
-    trpc.hello.queryOptions({ text: "world" }),
-  );
-  console.log(helloData);
 
   const recalculate = useCallback(() => {
     const outer = outerRef.current;

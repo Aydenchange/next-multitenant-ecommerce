@@ -1,4 +1,6 @@
 import { initTRPC } from "@trpc/server";
+import { getPayload } from "payload";
+import config from "@payload-config";
 /**
  * This context creator accepts `headers` so it can be reused in both
  * the RSC server caller (where you pass `next/headers`) and the
@@ -23,4 +25,7 @@ const t = initTRPC
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
-export const baseProcedure = t.procedure;
+export const baseProcedure = t.procedure.use(async ({ next }) => {
+  const payload = await getPayload({ config });
+  return next({ ctx: { db: payload } });
+});
