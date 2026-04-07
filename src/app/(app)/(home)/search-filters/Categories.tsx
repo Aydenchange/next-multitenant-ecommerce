@@ -55,6 +55,11 @@ export default function Categories({ data }: { data: CategoryNavItem[] }) {
     };
   }, [recalculate]);
 
+  useEffect(() => {
+    const frameId = requestAnimationFrame(recalculate);
+    return () => cancelAnimationFrame(frameId);
+  }, [data, recalculate]);
+
   return (
     <div ref={outerRef} className="flex items-center gap-2 w-full ">
       <CategoriesSidebar
