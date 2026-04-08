@@ -56,8 +56,12 @@ export default function Navbar() {
         ))}
       </div>
       <div className="hidden lg:flex gap-4">
-        <Button variant="elevated">Sign In</Button>
-        <Button variant="elevated">Start Selling</Button>
+        <Button asChild variant="elevated">
+          <Link href="/sign-in">Sign In</Link>
+        </Button>
+        <Button asChild variant="elevated">
+          <Link href="/sign-up">Start Selling</Link>
+        </Button>
       </div>
       <div
         className="flex lg:hidden items-center justify-center "

@@ -5,7 +5,7 @@ import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { AUTH_COOKIE } from "@/modules/auth/constansts";
 import { loginSchema, registerSchema } from "@/modules/auth/schemas";
 
-export const categoriesRouter = createTRPCRouter({
+export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
     const headers = await getHeader();
     const session = ctx.db.auth({ headers });
@@ -36,6 +36,7 @@ export const categoriesRouter = createTRPCRouter({
         data: {
           email: input.email,
           password: input.password,
+          username: input.username,
         },
       });
 
