@@ -1,1 +1,1 @@
-export const AUTH_COOKIE = "auth-token";
+export const AUTH_COOKIE = "auth";
