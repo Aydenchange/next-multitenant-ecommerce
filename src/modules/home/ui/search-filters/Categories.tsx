@@ -9,7 +9,13 @@ import { CategoryNavItem } from "./types";
 
 const GAP = 8; // gap-2 = 8px
 
-export default function Categories({ data }: { data: CategoryNavItem[] }) {
+export default function Categories({
+  data,
+  onHoverColorChange,
+}: {
+  data: CategoryNavItem[];
+  onHoverColorChange?: (color?: string) => void;
+}) {
   const outerRef = useRef<HTMLDivElement>(null); // watches for resize
   const innerRef = useRef<HTMLDivElement>(null); // hidden layer for measuring
   const viewRef = useRef<HTMLDivElement>(null); // "View All" button
@@ -88,7 +94,11 @@ export default function Categories({ data }: { data: CategoryNavItem[] }) {
       {/* Visible layer — only the first visibleCount items */}
       <div className=" flex flex-nowrap items-center gap-2 min-w-0 ">
         {data.slice(0, visibleCount).map((item) => (
-          <CategroyDropdown key={item.id} category={item} />
+          <CategroyDropdown
+            key={item.id}
+            category={item}
+            onHoverColorChange={onHoverColorChange}
+          />
         ))}
       </div>
 

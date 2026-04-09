@@ -1,5 +1,5 @@
 import { baseProcedure, createTRPCRouter } from "../init";
-import { CategoryNavItem } from "@/app/(app)/(home)/search-filters/types";
+import { CategoryNavItem } from "@/modules/home/ui/search-filters/types";
 import { Category } from "@/payload-types";
 
 export const categoriesRouter = createTRPCRouter({
@@ -13,6 +13,7 @@ export const categoriesRouter = createTRPCRouter({
           exists: false,
         },
       },
+      sort: "name",
     });
 
     const formattedData = data.docs.map((doc) => ({

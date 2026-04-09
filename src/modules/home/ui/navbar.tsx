@@ -20,7 +20,6 @@ const poppins = Poppins({
 export default function Navbar() {
   const trpc = useTRPC();
   const session = useQuery(trpc.auth.session.queryOptions());
-  console.log("session", session);
   const [isOpen, setIsOpen] = useState(false);
   const pathName = usePathname();
   const navbarItems = [
@@ -89,14 +88,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-      {/* <div className="flex lg:hidden items-center justify-center">
-        <Button
-          className="size-12 border-transparent bg-white"
-          onClick={() => setIsOpen(true)}
-        >
-          <MenuIcon />
-        </Button>
-      </div> */}
     </nav>
   );
 }
