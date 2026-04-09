@@ -5,7 +5,6 @@ import { caller } from "@/trpc/server";
 const Page = async () => {
   const session = await caller.auth.session();
 
-  console.log("session", session);
   if (session.user) {
     redirect("/");
   }
