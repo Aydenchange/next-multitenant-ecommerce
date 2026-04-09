@@ -108,14 +108,21 @@ export default function SearchFiltersClient() {
                 <Fragment key={`${item.label}-${index}`}>
                   <BreadcrumbItem>
                     {isLast || !item.href ? (
-                      <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                      <BreadcrumbPage className="text-xl font-medium">
+                        {item.label}
+                      </BreadcrumbPage>
                     ) : (
-                      <BreadcrumbLink asChild>
+                      <BreadcrumbLink
+                        asChild
+                        className="text-xl font-medium underline text-primary"
+                      >
                         <Link href={item.href}>{item.label}</Link>
                       </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>
-                  {!isLast && <BreadcrumbSeparator />}
+                  {!isLast && (
+                    <BreadcrumbSeparator className="text-primary font-medium text-lg" />
+                  )}
                 </Fragment>
               );
             })}
