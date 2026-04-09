@@ -88,14 +88,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-      {/* <div className="flex lg:hidden items-center justify-center">
-        <Button
-          className="size-12 border-transparent bg-white"
-          onClick={() => setIsOpen(true)}
-        >
-          <MenuIcon />
-        </Button>
-      </div> */}
     </nav>
   );
 }

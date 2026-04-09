@@ -4,9 +4,11 @@ import { CategoryLinkItem, toCategoryHref } from "./types";
 export default function SubCategoryMenu({
   subcategories,
   color,
+  categorySlug,
 }: {
   subcategories: CategoryLinkItem[];
   color?: string;
+  categorySlug: string;
 }) {
   return (
     <div
@@ -16,7 +18,7 @@ export default function SubCategoryMenu({
       {subcategories.map((sub) => (
         <Link
           key={sub.id}
-          href={toCategoryHref(sub.slug)}
+          href={toCategoryHref(categorySlug, sub.slug)}
           className="w-full text-left p-4 hover:bg-black hover:text-white flex justify-between items-center underline font-medium"
         >
           {sub.name}

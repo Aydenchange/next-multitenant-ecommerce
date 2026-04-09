@@ -1,6 +1,6 @@
-import { Footer } from "./footer";
-import Navbar from "./navbar";
-import SearchFilters from "./search-filters";
+import { Footer } from "@/modules/home/ui/footer";
+import Navbar from "@/modules/home/ui/navbar";
+import SearchFilters from "@/modules/home/ui/search-filters";
 
 export default async function Layout({
   children,
