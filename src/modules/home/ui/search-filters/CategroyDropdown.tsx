@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import SubCategoryMenu from "./SubCategoryMenu";
@@ -22,9 +22,16 @@ export default function CategroyDropdown({
   const categoryParam = params.category as string | undefined;
   const activeCategory = categoryParam || "all";
   const isActive = activeCategory === category.slug;
-  if (isActive) {
+
+  useEffect(() => {
+    if (!isActive) return;
+
     onHoverColorChange?.(category.color ?? undefined);
-  }
+
+    return () => {
+      onHoverColorChange?.(undefined);
+    };
+  }, [isActive, category.color, onHoverColorChange]);
 
   return (
     <div
