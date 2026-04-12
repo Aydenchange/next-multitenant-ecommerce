@@ -4,11 +4,14 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 export default function SearchFilters() {
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(trpc.categories.getAll.queryOptions());
+export default async function SearchFilters() {
+  const queryClient = getQueryClient();
+  await queryClient.prefetchQuery(trpc.categories.getAll.queryOptions());
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <SearchFiltersClient />
     </HydrationBoundary>
   );
+}
 }
