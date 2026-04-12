@@ -10,7 +10,7 @@ type props = {
 const Page = async ({ params }: props) => {
   const { subcategory } = await params;
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
+  await queryClient.prefetchQuery(
     trpc.products.getMany.queryOptions({ categorySlug: subcategory }),
   );
   return (

@@ -12,7 +12,8 @@ export const productsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const where: Where = {};
-
+      //TODO：subCategorySlug should validate if it belongs to categorySlug, and if it doesn't exist, return an error
+      //TODO: if categorySlug is not exist, return an error
       if (input.categorySlug) {
         if (input.categorySlug !== "all") {
           const categoriesData = await ctx.db.find({

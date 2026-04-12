@@ -1,7 +1,7 @@
 "use client";
 
 import { useTRPC } from "@/trpc/client";
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 
 type props = {
   category: string;
@@ -9,9 +9,9 @@ type props = {
 
 const ProductList = ({ category }: props) => {
   const trpc = useTRPC();
-  const [data] = useSuspenseQueries({
-    queries: [trpc.products.getMany.queryOptions({ categorySlug: category })],
-  });
+  const { data } = useSuspenseQuery(
+    trpc.products.getMany.queryOptions({ categorySlug: category }),
+  );
   return <div> {JSON.stringify(data, null, 2)}</div>;
 };
 

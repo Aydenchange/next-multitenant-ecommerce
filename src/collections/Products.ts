@@ -16,6 +16,7 @@ export const Products: CollectionConfig = {
       name: "price",
       type: "number",
       required: true,
+      min: 0,
       admin: {
         description: "Price in USD",
       },
