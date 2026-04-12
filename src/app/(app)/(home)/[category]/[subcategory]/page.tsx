@@ -16,13 +16,28 @@ const Page = async ({ params }: props) => {
     notFound();
   }
 
+import { TRPCError } from "@trpc/server";
+import { getQueryClient, trpc } from "@/trpc/server";
+import { notFound } from "next/navigation";
+...
   const queryClient = getQueryClient();
-  await queryClient.prefetchQuery(
-    trpc.products.getMany.queryOptions({
-      categorySlug: category,
-      subCategorySlug: subcategory,
-    }),
-  );
+  const queryOptions = trpc.products.getMany.queryOptions({
+    categorySlug: category,
+    subCategorySlug: subcategory,
+  });
+
+  try {
+    await queryClient.fetchQuery(queryOptions);
+  } catch (error) {
+    if (
+      error instanceof TRPCError &&
+      (error.code === "NOT_FOUND" || error.code === "BAD_REQUEST")
+    ) {
+      notFound();
+    }
+
+    throw error;
+  }
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Suspense fallback={<ProductListSkeleton />}>
