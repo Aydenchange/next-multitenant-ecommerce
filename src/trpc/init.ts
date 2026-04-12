@@ -1,15 +1,16 @@
 import { initTRPC } from "@trpc/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
+import { cache } from "react";
 /**
  * This context creator accepts `headers` so it can be reused in both
  * the RSC server caller (where you pass `next/headers`) and the
  * API route handler (where you pass the request headers).
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
+export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
   // const user = await auth(opts.headers);
   return { userId: "user_123" };
-};
+});
 // Avoid exporting the entire t-object
 // since it's not very descriptive.
 // For instance, the use of a t variable

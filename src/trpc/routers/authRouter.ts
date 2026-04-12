@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { loginSchema, registerSchema } from "@/modules/auth/schemas";
-import { generateAuthCookie } from "../utils";
+import { generateAuthCookie } from "@/modules/auth/utils";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
