@@ -118,6 +118,7 @@ export const productsRouter = createTRPCRouter({
       const data = await ctx.db.find({
         collection: "products",
         depth: 1, // Populate "category" & "image",
+        pagination: false,
         where,
       });
 

@@ -1,8 +1,12 @@
-import ProductList, { ProductListSkeleton } from "@/modules/home/product-list";
+import { TRPCError } from "@trpc/server";
 import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
+
+import ProductList, {
+  ProductListSkeleton,
+} from "@/modules/product/ui/product-list";
 
 type props = {
   params: Promise<{ category: string; subcategory: string }>;
@@ -16,10 +20,6 @@ const Page = async ({ params }: props) => {
     notFound();
   }
 
-import { TRPCError } from "@trpc/server";
-import { getQueryClient, trpc } from "@/trpc/server";
-import { notFound } from "next/navigation";
-...
   const queryClient = getQueryClient();
   const queryOptions = trpc.products.getMany.queryOptions({
     categorySlug: category,
