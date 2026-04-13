@@ -19,10 +19,15 @@ const ProductFilter = ({ children, title, className }: ProductFilterProps) => {
 
   return (
     <div className={cn("p-4 border-b flex flex-col gap-2", className)}>
-      <div
+      <button
+        type="button"
         onClick={() => setIsOpen((current) => !current)}
         className="flex items-center justify-between cursor-pointer"
+        aria-expanded={isOpen}
       >
+         <p className="font-medium">{title}</p>
+         <Icon className="size-5" />
+      </button>
         <p className="font-medium">{title}</p>
         <Icon className="size-5" />
       </div>
