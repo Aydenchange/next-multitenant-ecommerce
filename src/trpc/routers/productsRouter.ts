@@ -56,15 +56,16 @@ export const productsRouter = createTRPCRouter({
           message: "Subcategory slug requires a category slug",
         });
       }
-      if (input.minPrice) {
-        where.price = {
-          greater_than_equal: parseFloat(input.minPrice),
-        };
+      const minPriceNum = input.minPrice ? parseFloat(input.minPrice) : NaN;
+      const maxPriceNum = input.maxPrice ? parseFloat(input.maxPrice) : NaN;
+
+      if (!Number.isNaN(minPriceNum)) {
+        where.price = { greater_than_equal: minPriceNum };
       }
-      if (input.maxPrice) {
+      if (!Number.isNaN(maxPriceNum)) {
         where.price = {
           ...where.price,
-          less_than_equal: parseFloat(input.maxPrice),
+          less_than_equal: maxPriceNum,
         };
       }
 
