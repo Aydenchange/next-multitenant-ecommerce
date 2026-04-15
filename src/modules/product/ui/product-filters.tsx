@@ -5,6 +5,8 @@ import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import PriceFilter from "./price-filter";
+import { useProductFilters } from "../hooks/use-product-filters";
+import TagFilter from "@/modules/product/ui/tag-filter";
 
 interface ProductFilterProps {
   children: React.ReactNode;
@@ -25,29 +27,51 @@ const ProductFilter = ({ children, title, className }: ProductFilterProps) => {
         className="flex items-center justify-between cursor-pointer"
         aria-expanded={isOpen}
       >
-         <p className="font-medium">{title}</p>
-         <Icon className="size-5" />
-      </button>
         <p className="font-medium">{title}</p>
         <Icon className="size-5" />
-      </div>
+      </button>
       {isOpen && children}
     </div>
   );
 };
 
 const ProductFilters = () => {
+  const [filters, setFilters] = useProductFilters();
+  const hasActiveFilters = Boolean(
+    (filters.minPrice ?? "").trim() ||
+    (filters.maxPrice ?? "").trim() ||
+    (filters.tags?.length ?? 0) > 0,
+  );
+
+  function handleClear() {
+    setFilters({ minPrice: "", maxPrice: "", tags: [] });
+  }
+
   return (
     <div className="border rounded-md bg-white">
       <div className="p-4 border-b flex items-center justify-between">
         <p className="font-medium">Filters</p>
-        <button className="underline" type="button">
-          Clear
-        </button>
+        {hasActiveFilters ? (
+          <button className="underline" type="button" onClick={handleClear}>
+            Clear
+          </button>
+        ) : null}
       </div>
       <div>
         <ProductFilter title="Price">
-          <PriceFilter />
+          <PriceFilter
+            minPrice={filters.minPrice ?? ""}
+            maxPrice={filters.maxPrice ?? ""}
+            onMinPriceChange={(value) =>
+              setFilters({ ...filters, minPrice: value })
+            }
+            onMaxPriceChange={(value) =>
+              setFilters({ ...filters, maxPrice: value })
+            }
+          />
+        </ProductFilter>
+        <ProductFilter title="Tag">
+          <TagFilter />
         </ProductFilter>
       </div>
     </div>
