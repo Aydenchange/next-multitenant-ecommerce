@@ -1,8 +1,9 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
 import { baseProcedure, createTRPCRouter } from "../init";
-import { Where } from "payload";
+import { Sort, Where } from "payload";
 import { Category } from "@/payload-types";
+import { ProductSort, productSortValues } from "@/modules/product/constants";
 
 const normalizeSlug = (value?: string | null) => value?.trim().toLowerCase();
 
@@ -22,18 +23,57 @@ export const productsRouter = createTRPCRouter({
       z.object({
         categorySlug: z.string().nullable().optional(),
         subCategorySlug: z.string().nullable().optional(),
+        minPrice: z.string().nullable().optional(),
+        maxPrice: z.string().nullable().optional(),
+        sort: z.enum(productSortValues).nullable().optional(),
+        tags: z.array(z.string()).optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const categorySlug = normalizeSlug(input.categorySlug);
       const subCategorySlug = normalizeSlug(input.subCategorySlug);
+      const tagIds = [
+        ...new Set((input.tags ?? []).map((tag) => tag.trim()).filter(Boolean)),
+      ];
       const where: Where = {};
+
+      let sort: Sort = "-createdAt";
+
+      if (
+        input.sort === ProductSort.CURATED ||
+        input.sort === ProductSort.TRENDING
+      ) {
+        sort = "-createdAt";
+      }
+
+      if (input.sort === ProductSort.HOT_AND_NEW) {
+        sort = "createdAt";
+      }
 
       if (subCategorySlug && !categorySlug) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Subcategory slug requires a category slug",
         });
+      }
+      const minPriceNum = input.minPrice ? parseFloat(input.minPrice) : NaN;
+      const maxPriceNum = input.maxPrice ? parseFloat(input.maxPrice) : NaN;
+
+      if (!Number.isNaN(minPriceNum)) {
+        where.price = { greater_than_equal: minPriceNum };
+      }
+      if (!Number.isNaN(maxPriceNum)) {
+        where.price = {
+          ...where.price,
+          less_than_equal: maxPriceNum,
+        };
+      }
+
+      if (tagIds.length > 0) {
+        console.log("Filtering by tags:", tagIds);
+        where.tags = {
+          in: tagIds,
+        };
       }
 
       if (categorySlug === "all") {
@@ -56,18 +96,14 @@ export const productsRouter = createTRPCRouter({
             },
           },
         });
-
         const parentCategoryDoc = categoriesData.docs[0];
-
         if (!parentCategoryDoc) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Category does not exist",
           });
         }
-
         const parentCategory = formatCategory(parentCategoryDoc as Category);
-
         if (subCategorySlug) {
           const subCategoryData = await ctx.db.find({
             collection: "categories",
@@ -80,16 +116,13 @@ export const productsRouter = createTRPCRouter({
               },
             },
           });
-
           const existingSubCategory = subCategoryData.docs[0];
-
           if (!existingSubCategory) {
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Subcategory does not exist",
             });
           }
-
           const belongsToCategory = parentCategory.subcategories.some(
             (subcategory) => subcategory.slug === subCategorySlug,
           );
@@ -120,6 +153,7 @@ export const productsRouter = createTRPCRouter({
         depth: 1, // Populate "category" & "image",
         pagination: false,
         where,
+        sort,
       });
 
       return data;
