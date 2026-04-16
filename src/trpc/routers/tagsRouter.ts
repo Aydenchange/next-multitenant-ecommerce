@@ -21,12 +21,11 @@ export const tagsRouter = createTRPCRouter({
       });
 
       return {
-        docs: data.docs.map((doc) => ({
+        docs: data?.docs?.map((doc) => ({
           id: doc.id,
           name: doc.name,
         })),
-        hasMore: data.hasNextPage,
-        nextCursor: data.hasNextPage ? page + 1 : undefined,
+        nextCursor: data.hasNextPage ? (data.nextPage ?? undefined) : undefined,
       };
     }),
 });

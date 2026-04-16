@@ -27,6 +27,8 @@ export const productsRouter = createTRPCRouter({
         maxPrice: z.string().nullable().optional(),
         sort: z.enum(productSortValues).nullable().optional(),
         tags: z.array(z.string()).optional(),
+        cursor: z.number().int().positive().nullish(),
+        limit: z.number().int().positive().max(50).default(10),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -148,14 +150,20 @@ export const productsRouter = createTRPCRouter({
         }
       }
 
+      const page = input.cursor ?? 1;
+
       const data = await ctx.db.find({
         collection: "products",
         depth: 1, // Populate "category" & "image",
-        pagination: false,
         where,
         sort,
+        page,
+        limit: input.limit,
       });
 
-      return data;
+      return {
+        ...data,
+        nextCursor: data.hasNextPage ? (data.nextPage ?? undefined) : undefined,
+      };
     }),
 });
