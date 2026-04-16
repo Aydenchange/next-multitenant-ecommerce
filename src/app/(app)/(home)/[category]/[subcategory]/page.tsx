@@ -1,4 +1,4 @@
-import { TRPCError } from "@trpc/server";
+import { SearchParams } from "nuqs/server";
 import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Suspense } from "react";
@@ -7,12 +7,19 @@ import { notFound } from "next/navigation";
 import ProductList, {
   ProductListSkeleton,
 } from "@/modules/product/ui/product-list";
+import ProductView from "@/modules/product/product-view";
+import {
+  getProductsNextPageParam,
+  productsInfiniteQueryInput,
+} from "@/modules/product/constants";
+import { loadProductFilters } from "@/modules/product/search-params";
 
 type props = {
   params: Promise<{ category: string; subcategory: string }>;
+  searchParams: Promise<SearchParams>;
 };
 
-const Page = async ({ params }: props) => {
+const Page = async ({ params, searchParams }: props) => {
   const { category, subcategory } = await params;
 
   // Guard against asset-like paths matching this dynamic route.
@@ -20,29 +27,29 @@ const Page = async ({ params }: props) => {
     notFound();
   }
 
+  const productFilters = await loadProductFilters(searchParams);
   const queryClient = getQueryClient();
-  const queryOptions = trpc.products.getMany.queryOptions({
-    categorySlug: category,
-    subCategorySlug: subcategory,
-  });
+  await queryClient.prefetchInfiniteQuery(
+    trpc.products.getMany.infiniteQueryOptions(
+      {
+        categorySlug: category,
+        subCategorySlug: subcategory,
+        ...productsInfiniteQueryInput,
+        ...productFilters,
+      },
+      {
+        getNextPageParam: getProductsNextPageParam,
+      },
+    ),
+  );
 
-  try {
-    await queryClient.fetchQuery(queryOptions);
-  } catch (error) {
-    if (
-      error instanceof TRPCError &&
-      (error.code === "NOT_FOUND" || error.code === "BAD_REQUEST")
-    ) {
-      notFound();
-    }
-
-    throw error;
-  }
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<ProductListSkeleton />}>
-        <ProductList categorySlug={category} subCategorySlug={subcategory} />
-      </Suspense>
+      <ProductView>
+        <Suspense fallback={<ProductListSkeleton />}>
+          <ProductList categorySlug={category} subCategorySlug={subcategory} />
+        </Suspense>
+      </ProductView>
     </HydrationBoundary>
   );
 };
