@@ -72,7 +72,6 @@ export const productsRouter = createTRPCRouter({
       }
 
       if (tagIds.length > 0) {
-        console.log("Filtering by tags:", tagIds);
         where.tags = {
           in: tagIds,
         };
