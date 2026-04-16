@@ -4,11 +4,9 @@ import { useTRPC } from "@/trpc/client";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useProductFilters } from "../hooks/use-product-filters";
 import { ProductCard, ProductCardSkeleton } from "./product-card";
-import {
-  getProductsNextPageParam,
-  productsInfiniteQueryInput,
-} from "../constants";
+import { productsInfiniteQueryInput } from "../constants";
 import { Button } from "@/components/ui/button";
+import { buildProductsInfiniteQuery } from "../query-options";
 
 type props = {
   categorySlug?: string;
@@ -18,18 +16,16 @@ type props = {
 const ProductList = ({ categorySlug, subCategorySlug }: props) => {
   const [productFilters] = useProductFilters();
   const trpc = useTRPC();
+  const productsQuery = buildProductsInfiniteQuery({
+    categorySlug,
+    subCategorySlug,
+    productFilters,
+  });
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useSuspenseInfiniteQuery(
       trpc.products.getMany.infiniteQueryOptions(
-        {
-          categorySlug,
-          subCategorySlug,
-          ...productFilters,
-          ...productsInfiniteQueryInput,
-        },
-        {
-          getNextPageParam: getProductsNextPageParam,
-        },
+        productsQuery.input,
+        productsQuery.options,
       ),
     );
 

@@ -1,21 +1,15 @@
-import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import { SearchParams } from "nuqs/server";
 import { Suspense } from "react";
 
 import { loadProductFilters } from "@/modules/product/search-params";
-import {
-  getProductsNextPageParam,
-  getTagsNextPageParam,
-  productsInfiniteQueryInput,
-  tagsInfiniteQueryInput,
-} from "@/modules/product/constants";
 import ProductList, {
   ProductListSkeleton,
 } from "@/modules/product/ui/product-list";
 
 import ProductView from "@/modules/product/product-view";
+import { prefetchProductViewData } from "@/modules/product/server/prefetch-product-view-data";
 
 type props = {
   params: Promise<{ category: string }>;
@@ -31,27 +25,10 @@ const Page = async ({ params, searchParams }: props) => {
   }
 
   const productFilters = await loadProductFilters(searchParams);
-
-  const queryClient = getQueryClient();
-  await Promise.all([
-    queryClient.prefetchInfiniteQuery(
-      trpc.products.getMany.infiniteQueryOptions(
-        {
-          categorySlug: category,
-          ...productFilters,
-          ...productsInfiniteQueryInput,
-        },
-        {
-          getNextPageParam: getProductsNextPageParam,
-        },
-      ),
-    ),
-    queryClient.prefetchInfiniteQuery(
-      trpc.tags.getMany.infiniteQueryOptions(tagsInfiniteQueryInput, {
-        getNextPageParam: getTagsNextPageParam,
-      }),
-    ),
-  ]);
+  const queryClient = await prefetchProductViewData({
+    categorySlug: category,
+    productFilters,
+  });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

@@ -6,11 +6,12 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useProductFilters } from "../hooks/use-product-filters";
-import { getTagsNextPageParam, tagsInfiniteQueryInput } from "../constants";
+import { buildTagsInfiniteQuery } from "../query-options";
 
 const TagFilter = () => {
   const [filters, setFilters] = useProductFilters();
   const trpc = useTRPC();
+  const tagsQuery = buildTagsInfiniteQuery();
   const {
     data,
     error,
@@ -19,9 +20,7 @@ const TagFilter = () => {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery(
-    trpc.tags.getMany.infiniteQueryOptions(tagsInfiniteQueryInput, {
-      getNextPageParam: getTagsNextPageParam,
-    }),
+    trpc.tags.getMany.infiniteQueryOptions(tagsQuery.input, tagsQuery.options),
   );
 
   const selectedTags = filters.tags ?? [];
