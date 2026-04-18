@@ -1,5 +1,6 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
+import { headers as getHeader } from "next/headers";
 import { baseProcedure, createTRPCRouter } from "../init";
 import { Sort, Where } from "payload";
 import { Category } from "@/payload-types";
@@ -32,6 +33,16 @@ export const productsRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      const headers = await getHeader();
+      const { user } = await ctx.db.auth({ headers });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Please sign in to view products",
+        });
+      }
+
       const categorySlug = normalizeSlug(input.categorySlug);
       const subCategorySlug = normalizeSlug(input.subCategorySlug);
       const tagIds = [
@@ -158,6 +169,8 @@ export const productsRouter = createTRPCRouter({
         sort,
         page,
         limit: input.limit,
+        overrideAccess: false,
+        user,
       });
 
       return {

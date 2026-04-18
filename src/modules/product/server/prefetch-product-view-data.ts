@@ -1,8 +1,8 @@
 import {
   buildProductsInfiniteQuery,
   buildTagsInfiniteQuery,
-  ProductViewFilters,
 } from "@/modules/product/query-options";
+import type { ProductViewFilters } from "@/modules/product/query-options";
 import { getQueryClient, trpc } from "@/trpc/server";
 
 type PrefetchProductViewDataParams = {

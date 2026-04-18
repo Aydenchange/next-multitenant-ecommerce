@@ -31,12 +31,26 @@ export const authRouter = createTRPCRouter({
           message: "Email already exists",
         });
       }
+
+      const tenant = await ctx.db.create({
+        collection: "tenants",
+        data: {
+          name: input.username,
+          slug: input.username,
+          stripeAccountId: "test",
+        },
+      });
       await ctx.db.create({
         collection: "users",
         data: {
           email: input.email,
           password: input.password,
           username: input.username,
+          tenants: [
+            {
+              tenant: tenant.id,
+            },
+          ],
         },
       });
 
