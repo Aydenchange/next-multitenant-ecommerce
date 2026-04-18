@@ -1,12 +1,18 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
-import { headers as getHeader } from "next/headers";
 import { baseProcedure, createTRPCRouter } from "../init";
 import { Sort, Where } from "payload";
-import { Category } from "@/payload-types";
+import { Category, Media, Product, Tenant } from "@/payload-types";
 import { ProductSort, productSortValues } from "@/modules/product/constants";
 
 const normalizeSlug = (value?: string | null) => value?.trim().toLowerCase();
+
+const isPopulatedTenant = (value: Product["tenant"]): value is Tenant =>
+  typeof value === "object" && value !== null;
+
+const isPopulatedMedia = (
+  value: Product["image"] | Tenant["image"],
+): value is Media => typeof value === "object" && value !== null;
 
 const formatCategory = (doc: Category) => ({
   ...doc,
@@ -30,18 +36,19 @@ export const productsRouter = createTRPCRouter({
         tags: z.array(z.string()).optional(),
         cursor: z.number().int().positive().nullish(),
         limit: z.number().int().positive().max(50).default(10),
+        tenantSlug: z.string().nullable().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const headers = await getHeader();
-      const { user } = await ctx.db.auth({ headers });
+      // const headers = await getHeader();
+      // const { user } = await ctx.db.auth({ headers });
 
-      if (!user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Please sign in to view products",
-        });
-      }
+      // if (!user) {
+      //   throw new TRPCError({
+      //     code: "UNAUTHORIZED",
+      //     message: "Please sign in to view products",
+      //   });
+      // }
 
       const categorySlug = normalizeSlug(input.categorySlug);
       const subCategorySlug = normalizeSlug(input.subCategorySlug);
@@ -85,6 +92,12 @@ export const productsRouter = createTRPCRouter({
       if (tagIds.length > 0) {
         where.tags = {
           in: tagIds,
+        };
+      }
+
+      if (input.tenantSlug) {
+        where["tenant.slug"] = {
+          equals: input.tenantSlug,
         };
       }
 
@@ -164,17 +177,38 @@ export const productsRouter = createTRPCRouter({
 
       const data = await ctx.db.find({
         collection: "products",
-        depth: 1, // Populate "category" & "image",
+        depth: 2, // Populate "category" & "image",
         where,
         sort,
         page,
         limit: input.limit,
-        overrideAccess: false,
-        user,
+        // overrideAccess: false,
+        // user,
+      });
+
+      const docs = data.docs.map((doc) => {
+        const product = doc as Product;
+        const tenant = isPopulatedTenant(product.tenant)
+          ? product.tenant
+          : undefined;
+
+        return {
+          ...product,
+          image: isPopulatedMedia(product.image) ? product.image : undefined,
+          tenant: tenant
+            ? {
+                ...tenant,
+                image: isPopulatedMedia(tenant.image)
+                  ? tenant.image
+                  : undefined,
+              }
+            : undefined,
+        };
       });
 
       return {
         ...data,
+        docs,
         nextCursor: data.hasNextPage ? (data.nextPage ?? undefined) : undefined,
       };
     }),

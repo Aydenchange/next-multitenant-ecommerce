@@ -11,17 +11,20 @@ type ProductViewFilters = Awaited<ReturnType<typeof loadProductFilters>>;
 type BuildProductsInfiniteQueryParams = {
   categorySlug?: string;
   subCategorySlug?: string;
+  tenantSlug?: string;
   productFilters: ProductViewFilters;
 };
 
 export const buildProductsInfiniteQuery = ({
   categorySlug,
   subCategorySlug,
+  tenantSlug,
   productFilters,
 }: BuildProductsInfiniteQueryParams) => ({
   input: {
     categorySlug,
     subCategorySlug,
+    tenantSlug,
     ...productFilters,
     ...productsInfiniteQueryInput,
   },
