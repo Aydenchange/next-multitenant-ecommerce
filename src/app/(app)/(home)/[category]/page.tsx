@@ -4,12 +4,11 @@ import { SearchParams } from "nuqs/server";
 import { Suspense } from "react";
 
 import { loadProductFilters } from "@/modules/product/search-params";
-import ProductList, {
-  ProductListSkeleton,
-} from "@/modules/product/ui/product-list";
-
-import ProductView from "@/modules/product/product-view";
 import { prefetchProductViewData } from "@/modules/product/server/prefetch-product-view-data";
+import ProductListLayout from "@/modules/product/ui/product-list-layout";
+import ProductListView, {
+  ProductListSkeleton,
+} from "@/modules/product/view/product-list-view";
 
 type props = {
   params: Promise<{ category: string }>;
@@ -32,11 +31,11 @@ const Page = async ({ params, searchParams }: props) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProductView>
+      <ProductListLayout>
         <Suspense fallback={<ProductListSkeleton />}>
-          <ProductList categorySlug={category} />
+          <ProductListView categorySlug={category} />
         </Suspense>
-      </ProductView>
+      </ProductListLayout>
     </HydrationBoundary>
   );
 };

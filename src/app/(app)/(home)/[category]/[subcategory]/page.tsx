@@ -3,12 +3,12 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
-import ProductList, {
-  ProductListSkeleton,
-} from "@/modules/product/ui/product-list";
-import ProductView from "@/modules/product/product-view";
 import { loadProductFilters } from "@/modules/product/search-params";
 import { prefetchProductViewData } from "@/modules/product/server/prefetch-product-view-data";
+import ProductListLayout from "@/modules/product/ui/product-list-layout";
+import ProductListView, {
+  ProductListSkeleton,
+} from "@/modules/product/view/product-list-view";
 
 type props = {
   params: Promise<{ category: string; subcategory: string }>;
@@ -32,11 +32,14 @@ const Page = async ({ params, searchParams }: props) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProductView>
+      <ProductListLayout>
         <Suspense fallback={<ProductListSkeleton />}>
-          <ProductList categorySlug={category} subCategorySlug={subcategory} />
+          <ProductListView
+            categorySlug={category}
+            subCategorySlug={subcategory}
+          />
         </Suspense>
-      </ProductView>
+      </ProductListLayout>
     </HydrationBoundary>
   );
 };
