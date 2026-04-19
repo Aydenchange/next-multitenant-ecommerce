@@ -1,14 +1,13 @@
 import type { SearchParams } from "nuqs/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { Suspense } from "react";
 
-import { ProductListView } from "@/modules/products/ui/views/product-list-view";
 import { loadProductFilters } from "@/modules/product/search-params";
 import { prefetchProductViewData } from "@/modules/product/server/prefetch-product-view-data";
-import { Suspense } from "react";
-import ProductView from "@/modules/product/product-view";
-import ProductList, {
+import ProductListView, {
   ProductListSkeleton,
-} from "@/modules/product/ui/product-list";
+} from "@/modules/product/view/product-list-view";
+import ProductListLayout from "@/modules/product/ui/product-list-layout";
 
 interface Props {
   searchParams: Promise<SearchParams>;
@@ -26,11 +25,11 @@ const Page = async ({ params, searchParams }: Props) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProductView>
+      <ProductListLayout>
         <Suspense fallback={<ProductListSkeleton />}>
-          <ProductList tenantSlug={slug} />
+          <ProductListView tenantSlug={slug} />
         </Suspense>
-      </ProductView>
+      </ProductListLayout>
     </HydrationBoundary>
   );
 };

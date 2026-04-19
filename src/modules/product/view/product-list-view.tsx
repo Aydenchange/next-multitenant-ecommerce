@@ -3,7 +3,7 @@
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useProductFilters } from "../hooks/use-product-filters";
-import { ProductCard, ProductCardSkeleton } from "./product-card";
+import { ProductCard, ProductCardSkeleton } from "../ui/product-card";
 import { productsInfiniteQueryInput } from "../constants";
 import { Button } from "@/components/ui/button";
 import { buildProductsInfiniteQuery } from "../query-options";
@@ -14,7 +14,11 @@ type props = {
   tenantSlug?: string;
 };
 
-const ProductList = ({ categorySlug, subCategorySlug, tenantSlug }: props) => {
+const ProductListView = ({
+  categorySlug,
+  subCategorySlug,
+  tenantSlug,
+}: props) => {
   const [productFilters] = useProductFilters();
   const trpc = useTRPC();
   const productsQuery = buildProductsInfiniteQuery({
@@ -87,4 +91,4 @@ export const ProductListSkeleton = () => {
   );
 };
 
-export default ProductList;
+export default ProductListView;

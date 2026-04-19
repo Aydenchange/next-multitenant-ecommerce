@@ -25,6 +25,32 @@ const formatCategory = (doc: Category) => ({
 });
 
 export const productsRouter = createTRPCRouter({
+  getOne: baseProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const product = await ctx.db.findByID({
+        collection: "products",
+        id: input.id,
+        depth: 2, // Load the "product.image", "product.tenant", and "product.tenant.image"
+      });
+
+      return {
+        ...product,
+        image: isPopulatedMedia(product.image) ? product.image : null,
+        tenant: isPopulatedTenant(product.tenant)
+          ? {
+              ...product.tenant,
+              image: isPopulatedMedia(product.tenant.image)
+                ? product.tenant.image
+                : null,
+            }
+          : product.tenant,
+      };
+    }),
   getMany: baseProcedure
     .input(
       z.object({

@@ -1,11 +1,11 @@
-import ProductFilters from "./ui/product-filters";
-import ProductSort from "./ui/product-sort";
+import ProductFilters from "./product-filters";
+import ProductSort from "./product-sort";
 
-interface ProductViewProps {
+interface ProductListLayoutProps {
   children: React.ReactNode;
 }
 
-const ProductView = ({ children }: ProductViewProps) => {
+const ProductListLayout = ({ children }: ProductListLayoutProps) => {
   return (
     <div className="px-4 lg:px-12 py-8 flex flex-col gap-4">
       <div className="flex flex-col lg:flex-row lg:items-center gap-y-2 lg:gap-y-0 justify-between">
@@ -23,4 +23,4 @@ const ProductView = ({ children }: ProductViewProps) => {
   );
 };
 
-export default ProductView;
+export default ProductListLayout;
