@@ -10,9 +10,13 @@ export function generateTenantURL(tenantSlug: string) {
 }
 
 export function formatCurrency(value: number | string) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "$0";
+
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
-  }).format(Number(value));
+  }).format(amount);
+}
 }
