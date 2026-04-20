@@ -9,21 +9,25 @@ export const checkoutRouter = createTRPCRouter({
   getProducts: baseProcedure
     .input(
       z.object({
+        tenantSlug: z.string(),
         ids: z.array(z.string()),
       }),
     )
     .query(async ({ ctx, input }) => {
+      const uniqueIds = [...new Set(input.ids)];
       const data = await ctx.db.find({
         collection: "products",
         depth: 2, // Populate "category", "image", "tenant" & "tenant.image"
         where: {
           id: {
-            in: input.ids,
+            in: uniqueIds,
           },
         },
       });
-
-      if (data.totalDocs !== input.ids.length) {
+      const tenantMismatch = data.docs.some(
+        (doc) => (doc.tenant as Tenant)?.slug !== input.tenantSlug,
+      );
+      if (data.totalDocs !== uniqueIds.length || tenantMismatch) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Products not found",

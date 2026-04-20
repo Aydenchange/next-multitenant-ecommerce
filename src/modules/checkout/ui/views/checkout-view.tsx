@@ -17,7 +17,7 @@ interface CheckoutViewProps {
 }
 
 export const CheckoutView = ({ tenantSlug }: CheckoutViewProps) => {
-  const { productIds, removeProduct, clearAllCarts } = useCart(tenantSlug);
+  const { productIds, removeProduct, clearCart } = useCart(tenantSlug);
 
   const trpc = useTRPC();
   const { data, error, isLoading } = useQuery(
@@ -28,10 +28,10 @@ export const CheckoutView = ({ tenantSlug }: CheckoutViewProps) => {
 
   useEffect(() => {
     if (error?.data?.code === "NOT_FOUND") {
-      clearAllCarts();
+      clearCart();
       toast.warning("Invalid products found, cart cleared");
     }
-  }, [error, clearAllCarts]);
+  }, [error, clearCart]);
 
   if (isLoading) {
     return (
