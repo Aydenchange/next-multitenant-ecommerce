@@ -12,7 +12,7 @@ interface CheckoutItemProps {
   tenantName: string;
   price: number;
   onRemove: () => void;
-};
+}
 
 export const CheckoutItem = ({
   isLast,
@@ -28,7 +28,7 @@ export const CheckoutItem = ({
     <div
       className={cn(
         "grid grid-cols-[8.5rem_1fr_auto] gap-4 pr-4 border-b",
-        isLast && "border-b-0"
+        isLast && "border-b-0",
       )}
     >
       <div className="overflow-hidden border-r">
@@ -54,10 +54,13 @@ export const CheckoutItem = ({
       </div>
 
       <div className="py-4 flex flex-col justify-between">
-        <p className="font-medium">
-          {formatCurrency(price)}
-        </p>
-        <button className="underline font-medium cursor-pointer" onClick={onRemove} type="button">
+        <p className="font-medium">{formatCurrency(price)}</p>
+        <button
+          className="underline font-medium cursor-pointer"
+          onClick={onRemove}
+          type="button"
+          aria-label={`Remove ${name} from cart`}
+        >
           Remove
         </button>
       </div>

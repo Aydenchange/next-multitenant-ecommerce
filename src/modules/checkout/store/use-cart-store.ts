@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 interface TenantCart {
   productIds: string[];
-};
+}
 
 interface CartState {
   tenantCarts: Record<string, TenantCart>;
@@ -12,36 +12,41 @@ interface CartState {
   clearCart: (tenantSlug: string) => void;
   clearAllCarts: () => void;
   getCartByTenant: (tenantSlug: string) => string[];
-};
+}
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       tenantCarts: {},
-      addProduct: (tenantSlug, productId) => 
+      addProduct: (tenantSlug, productId) =>
         set((state) => ({
           tenantCarts: {
             ...state.tenantCarts,
             [tenantSlug]: {
-              productIds: [
-                ...(state.tenantCarts[tenantSlug]?.productIds || []),
+              productIds: state.tenantCarts[tenantSlug]?.productIds.includes(
                 productId,
-              ]
-            }
-          }
+              )
+                ? state.tenantCarts[tenantSlug]?.productIds || []
+                : [
+                    ...(state.tenantCarts[tenantSlug]?.productIds || []),
+                    productId,
+                  ],
+            },
+          },
         })),
-      removeProduct: (tenantSlug, productId) => 
+      removeProduct: (tenantSlug, productId) =>
         set((state) => ({
           tenantCarts: {
             ...state.tenantCarts,
             [tenantSlug]: {
-              productIds: state.tenantCarts[tenantSlug]?.productIds.filter(
-                (id) => id !== productId
-              ) || [],
-            }
-          }
+              productIds:
+                state.tenantCarts[tenantSlug]?.productIds.filter(
+                  (id) => id !== productId,
+                ) || [],
+            },
+          },
         })),
-      clearCart: (tenantSlug) => 
+      clearCart: (tenantSlug) =>
         set((state) => ({
           tenantCarts: {
             ...state.tenantCarts,
@@ -50,11 +55,11 @@ export const useCartStore = create<CartState>()(
             },
           },
         })),
-      clearAllCarts: () => 
+      clearAllCarts: () =>
         set({
           tenantCarts: {},
         }),
-      getCartByTenant: (tenantSlug) => 
+      getCartByTenant: (tenantSlug) =>
         get().tenantCarts[tenantSlug]?.productIds || [],
     }),
     {
