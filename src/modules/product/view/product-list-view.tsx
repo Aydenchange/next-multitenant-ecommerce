@@ -4,7 +4,7 @@ import { useTRPC } from "@/trpc/client";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useProductFilters } from "../hooks/use-product-filters";
 import { ProductCard, ProductCardSkeleton } from "../ui/product-card";
-import { productsInfiniteQueryInput } from "../constants";
+import { productsInfiniteQueryInput } from "../../../constants";
 import { Button } from "@/components/ui/button";
 import { buildProductsInfiniteQuery } from "../query-options";
 

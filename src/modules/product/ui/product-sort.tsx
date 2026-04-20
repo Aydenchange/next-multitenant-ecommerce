@@ -1,7 +1,7 @@
 "use client";
 
 import { useProductFilters } from "../hooks/use-product-filters";
-import { ProductSort } from "../constants";
+import { ProductSort } from "../../../constants";
 
 const ProductSortSection = () => {
   const [filters, setProductFilters] = useProductFilters();

@@ -4,7 +4,7 @@ import {
   parseAsString,
   parseAsStringEnum,
 } from "nuqs/server";
-import { ProductSort, productSortValues } from "./constants";
+import { ProductSort, productSortValues } from "../../constants";
 
 export const params = {
   minPrice: parseAsString
