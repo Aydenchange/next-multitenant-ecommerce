@@ -8,7 +8,7 @@ const Page = async () => {
   const queryClient = getQueryClient();
   const productsQuery = buildLibraryInfiniteQuery();
 
-  void queryClient.prefetchInfiniteQuery(
+  await queryClient.prefetchInfiniteQuery(
     trpc.library.getMany.infiniteQueryOptions(
       productsQuery.input,
       productsQuery.options,

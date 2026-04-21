@@ -13,6 +13,10 @@ export const useCart = (tenantSlug: string) => {
     useShallow((state) => state.tenantCarts[tenantSlug]?.productIds || []),
   );
 
+  const totalItems = productIds.length;
+  const cartCountLabel =
+    totalItems === 0 ? "" : totalItems > 99 ? "99+" : `${totalItems}`;
+
   const toggleProduct = useCallback(
     (productId: string) => {
       if (productIds.includes(productId)) {
@@ -57,6 +61,7 @@ export const useCart = (tenantSlug: string) => {
     clearAllCarts,
     toggleProduct,
     isProductInCart,
-    totalItems: productIds.length,
+    totalItems,
+    cartCountLabel,
   };
 };

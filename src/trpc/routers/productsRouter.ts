@@ -47,7 +47,6 @@ export const productsRouter = createTRPCRouter({
       if (session.user) {
         const ordersData = await ctx.db.find({
           collection: "orders",
-          pagination: false,
           limit: 1,
           where: {
             and: [

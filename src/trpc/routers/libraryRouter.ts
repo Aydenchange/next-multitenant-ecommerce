@@ -1,8 +1,15 @@
 import z from "zod";
 
 import { PRODUCTS_LIMIT } from "@/constants";
-import { Media, Tenant } from "@/payload-types";
+import { Media, Product, Tenant } from "@/payload-types";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+
+const isPopulatedTenant = (value: Product["tenant"]): value is Tenant =>
+  typeof value === "object" && value !== null;
+
+const isPopulatedMedia = (
+  value: Product["image"] | Tenant["image"],
+): value is Media => typeof value === "object" && value !== null;
 
 export const libraryRouter = createTRPCRouter({
   getMany: protectedProcedure
@@ -25,10 +32,24 @@ export const libraryRouter = createTRPCRouter({
         },
       });
 
-      const productIds = ordersData.docs.map((order) => order.product);
+      const productIds = ordersData.docs
+        .map((order) =>
+          typeof order.product === "string" ? order.product : order.product?.id,
+        )
+        .filter((id): id is string => !!id);
+
+      if (productIds.length === 0) {
+        return {
+          docs: [],
+          nextCursor: ordersData.hasNextPage
+            ? (ordersData.nextPage ?? undefined)
+            : undefined,
+        };
+      }
 
       const productsData = await ctx.db.find({
         collection: "products",
+        depth: 2, // We want to populate tenant、image and tenant.image
         pagination: false,
         where: {
           id: {
@@ -37,13 +58,38 @@ export const libraryRouter = createTRPCRouter({
         },
       });
 
+      const productsById = new Map(
+        productsData.docs.map((doc) => {
+          const product = doc as Product;
+          const tenant = isPopulatedTenant(product.tenant)
+            ? product.tenant
+            : undefined;
+
+          return [
+            product.id,
+            {
+              ...product,
+              image: isPopulatedMedia(product.image) ? product.image : null,
+              tenant: tenant
+                ? {
+                    ...tenant,
+                    image: isPopulatedMedia(tenant.image) ? tenant.image : null,
+                  }
+                : product.tenant,
+            },
+          ];
+        }),
+      );
+
+      const docs = productIds
+        .map((id) => productsById.get(id))
+        .filter((doc): doc is NonNullable<typeof doc> => !!doc);
+
       return {
-        ...ordersData,
-        docs: productsData.docs.map((doc) => ({
-          ...doc,
-          image: doc.image as Media | null,
-          tenant: doc.tenant as Tenant & { image: Media | null },
-        })),
+        docs,
+        nextCursor: ordersData.hasNextPage
+          ? (ordersData.nextPage ?? undefined)
+          : undefined,
       };
     }),
 });
