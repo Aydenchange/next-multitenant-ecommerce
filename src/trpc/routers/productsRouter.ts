@@ -1,9 +1,11 @@
 import z from "zod";
+import { headers as getHeaders } from "next/headers";
 import { TRPCError } from "@trpc/server";
-import { baseProcedure, createTRPCRouter } from "../init";
 import { Sort, Where } from "payload";
+
+import { baseProcedure, createTRPCRouter } from "../init";
 import { Category, Media, Product, Tenant } from "@/payload-types";
-import { ProductSort, productSortValues } from "@/modules/product/constants";
+import { ProductSort, productSortValues } from "@/constants";
 
 const normalizeSlug = (value?: string | null) => value?.trim().toLowerCase();
 
@@ -32,14 +34,43 @@ export const productsRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      const headers = await getHeaders();
+      const session = await ctx.db.auth({ headers });
       const product = await ctx.db.findByID({
         collection: "products",
         id: input.id,
         depth: 2, // Load the "product.image", "product.tenant", and "product.tenant.image"
       });
 
+      let isPurchased = false;
+
+      if (session.user) {
+        const ordersData = await ctx.db.find({
+          collection: "orders",
+          pagination: false,
+          limit: 1,
+          where: {
+            and: [
+              {
+                product: {
+                  equals: input.id,
+                },
+              },
+              {
+                user: {
+                  equals: session.user.id,
+                },
+              },
+            ],
+          },
+        });
+
+        isPurchased = !!ordersData.docs[0];
+      }
+
       return {
         ...product,
+        isPurchased,
         image: isPopulatedMedia(product.image) ? product.image : null,
         tenant: isPopulatedTenant(product.tenant)
           ? {

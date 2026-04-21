@@ -3,7 +3,7 @@ import {
   getTagsNextPageParam,
   productsInfiniteQueryInput,
   tagsInfiniteQueryInput,
-} from "@/modules/product/constants";
+} from "@/constants";
 import { loadProductFilters } from "@/modules/product/search-params";
 
 type ProductViewFilters = Awaited<ReturnType<typeof loadProductFilters>>;
