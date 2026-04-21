@@ -3,6 +3,7 @@ import Image from "next/image";
 import { StarIcon } from "lucide-react";
 import { formatCurrency, generateTenantURL } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+
 interface ProductCardProps {
   id: string;
   name: string;

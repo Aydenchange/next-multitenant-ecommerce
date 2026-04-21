@@ -2,7 +2,7 @@ import { PRODUCTS_LIMIT } from "@/constants";
 
 type LibraryInfinitePage = {
   docs: unknown[];
-  nextPage?: number | null;
+  nextCursor?: number;
 };
 
 export const buildLibraryInfiniteQuery = () => ({
@@ -10,7 +10,6 @@ export const buildLibraryInfiniteQuery = () => ({
     limit: PRODUCTS_LIMIT,
   },
   options: {
-    getNextPageParam: (lastPage: LibraryInfinitePage) =>
-      lastPage.docs.length > 0 ? (lastPage.nextPage ?? undefined) : undefined,
+    getNextPageParam: (lastPage: LibraryInfinitePage) => lastPage.nextCursor,
   },
 });

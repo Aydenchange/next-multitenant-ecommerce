@@ -56,8 +56,8 @@ const ProductListView = ({
                 imageUrl={product.image?.url || undefined}
                 authorUsername={product.tenant?.name || "Unknown"}
                 authorImageUrl={product.tenant?.image?.url || undefined}
-                reviewRating={3}
-                reviewCount={5}
+                reviewRating={product.reviewRating}
+                reviewCount={product.reviewCount}
                 price={product.price}
               />,
             ];
