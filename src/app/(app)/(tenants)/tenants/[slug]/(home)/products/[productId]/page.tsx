@@ -7,6 +7,8 @@ import {
   ProductViewSkeleton,
 } from "@/modules/product/view/product-detail-view";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{ slug: string; productId: string }>;
 }
