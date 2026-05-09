@@ -2,6 +2,7 @@ import z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { tenantWhere, toTenantId } from "@/lib/tenant";
 
 export const reviewsRouter = createTRPCRouter({
   getOne: protectedProcedure
@@ -19,15 +20,43 @@ export const reviewsRouter = createTRPCRouter({
         });
       }
 
+      const productTenantId = toTenantId(product.tenant);
+
+      if (!productTenantId) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Product tenant not found",
+        });
+      }
+
+      const ordersData = await ctx.db.find({
+        collection: "orders",
+        limit: 1,
+        pagination: false,
+        where: tenantWhere(productTenantId, {
+          and: [
+            { product: { equals: product.id } },
+            { user: { equals: ctx.user.id } },
+          ],
+        }),
+      });
+
+      if (!ordersData.docs[0]) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only customers can review this product",
+        });
+      }
+
       const reviewsData = await ctx.db.find({
         collection: "reviews",
         limit: 1,
-        where: {
+        where: tenantWhere(productTenantId, {
           and: [
             { product: { equals: product.id } },
-            { user: { equals: ctx.session.user.id } },
+            { user: { equals: ctx.user.id } },
           ],
-        },
+        }),
       });
 
       return reviewsData.docs[0] ?? null;
@@ -42,14 +71,55 @@ export const reviewsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existingReviewsData = await ctx.db.find({
-        collection: "reviews",
-        where: {
+      const product = await ctx.db.findByID({
+        collection: "products",
+        id: input.productId,
+        depth: 0,
+      });
+
+      if (!product) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Product not found",
+        });
+      }
+
+      const productTenantId = toTenantId(product.tenant);
+
+      if (!productTenantId) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Product tenant not found",
+        });
+      }
+
+      const ordersData = await ctx.db.find({
+        collection: "orders",
+        limit: 1,
+        pagination: false,
+        where: tenantWhere(productTenantId, {
           and: [
             { product: { equals: input.productId } },
-            { user: { equals: ctx.session.user.id } },
+            { user: { equals: ctx.user.id } },
           ],
-        },
+        }),
+      });
+
+      if (!ordersData.docs[0]) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only customers can review this product",
+        });
+      }
+
+      const existingReviewsData = await ctx.db.find({
+        collection: "reviews",
+        where: tenantWhere(productTenantId, {
+          and: [
+            { product: { equals: input.productId } },
+            { user: { equals: ctx.user.id } },
+          ],
+        }),
       });
 
       if (existingReviewsData.totalDocs > 0) {
@@ -62,7 +132,8 @@ export const reviewsRouter = createTRPCRouter({
       return ctx.db.create({
         collection: "reviews",
         data: {
-          user: ctx.session.user.id,
+          tenant: productTenantId,
+          user: ctx.user.id,
           product: input.productId,
           rating: input.rating,
           description: input.description,
@@ -89,7 +160,7 @@ export const reviewsRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Review not found" });
       }
 
-      if (existingReview.user !== ctx.session.user.id) {
+      if (existingReview.user !== ctx.user.id) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Not allowed" });
       }
 

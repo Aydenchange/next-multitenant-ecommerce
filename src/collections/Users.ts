@@ -7,7 +7,7 @@ const defaultTenantArrayField = tenantsArrayField({
   tenantsCollectionSlug: "tenants",
   tenantsArrayTenantFieldName: "tenant",
   arrayFieldAccess: {
-    read: () => true,
+    read: ({ req }) => isSuperAdmin(req.user),
     create: ({ req }) => isSuperAdmin(req.user),
     update: ({ req }) => isSuperAdmin(req.user),
   },
@@ -21,7 +21,16 @@ const defaultTenantArrayField = tenantsArrayField({
 export const Users: CollectionConfig = {
   slug: "users",
   access: {
-    read: () => true,
+    read: ({ req }) => {
+      if (isSuperAdmin(req.user)) return true;
+      if (!req.user) return false;
+
+      return {
+        id: {
+          equals: req.user.id,
+        },
+      };
+    },
     create: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
     update: ({ req, id }) => {

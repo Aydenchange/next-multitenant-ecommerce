@@ -7,8 +7,10 @@ import { ReviewSidebar } from "../components/review-sidebar";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-import { Suspense } from "react";
+import { Suspense, type ComponentProps } from "react";
 import { ReviewFormSkeleton } from "../components/review-form";
+
+type RichTextData = ComponentProps<typeof RichText>["data"];
 
 export const ProductView = ({ productId }: { productId: string }) => {
   const trpc = useTRPC();
@@ -41,7 +43,7 @@ export const ProductView = ({ productId }: { productId: string }) => {
 
           <div className="lg:col-span-5">
             {data.content ? (
-              <RichText data={data.content} />
+              <RichText data={data.content as unknown as RichTextData} />
             ) : (
               <p className="font-medium italic text-muted-foreground">
                 No special content

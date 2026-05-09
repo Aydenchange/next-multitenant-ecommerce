@@ -308,6 +308,7 @@ export interface Tag {
  */
 export interface Order {
   id: string;
+  tenant: string | Tenant;
   name: string;
   user: string | User;
   product: string | Product;
@@ -325,6 +326,7 @@ export interface Order {
  */
 export interface Review {
   id: string;
+  tenant: string | Tenant;
   description: string;
   rating: number;
   product: string | Product;
@@ -538,6 +540,7 @@ export interface TenantsSelect<T extends boolean = true> {
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
+  tenant?: T;
   name?: T;
   user?: T;
   product?: T;
@@ -551,6 +554,7 @@ export interface OrdersSelect<T extends boolean = true> {
  * via the `definition` "reviews_select".
  */
 export interface ReviewsSelect<T extends boolean = true> {
+  tenant?: T;
   description?: T;
   rating?: T;
   product?: T;

@@ -11,12 +11,13 @@ import { stripe } from "@/lib/stripe";
 import { CheckoutMetadata, ProductMetadata } from "@/modules/checkout/types";
 import { PLATFORM_FEE_PERCENTAGE } from "@/constants";
 import { generateTenantURL } from "@/lib/utils";
+import { findTenantBySlug, tenantWhere } from "@/lib/tenant";
 
 export const checkoutRouter = createTRPCRouter({
   verify: protectedProcedure.mutation(async ({ ctx }) => {
     const user = await ctx.db.findByID({
       collection: "users",
-      id: ctx.session.user.id,
+      id: ctx.user.id,
       depth: 0, // user.tenants[0].tenant is going to be a string (tenant ID)
     });
 
@@ -39,7 +40,7 @@ export const checkoutRouter = createTRPCRouter({
         message: "Tenant not found",
       });
     }
-    const domain = generateTenantURL(input.tenantSlug);
+    const domain = generateTenantURL(tenant.slug);
 
     const accountLink = await stripe.accountLinks.create({
       account: tenant.stripeAccountId,
@@ -69,19 +70,23 @@ export const checkoutRouter = createTRPCRouter({
         Parameters<typeof stripe.checkout.sessions.create>[0]
       >;
 
+      const tenant = await findTenantBySlug(ctx.db, input.tenantSlug);
+
+      if (!tenant) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tenant not found",
+        });
+      }
+
       const products = await ctx.db.find({
         collection: "products",
         depth: 2,
-        where: {
+        where: tenantWhere(tenant.id, {
           and: [
             {
               id: {
                 in: input.productIds,
-              },
-            },
-            {
-              "tenant.slug": {
-                equals: input.tenantSlug,
               },
             },
             {
@@ -90,33 +95,13 @@ export const checkoutRouter = createTRPCRouter({
               },
             },
           ],
-        },
+        }),
       });
 
       if (products.totalDocs !== input.productIds.length) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Products not found",
-        });
-      }
-
-      const tenantsData = await ctx.db.find({
-        collection: "tenants",
-        limit: 1,
-        pagination: false,
-        where: {
-          slug: {
-            equals: input.tenantSlug,
-          },
-        },
-      });
-
-      const tenant = tenantsData.docs[0];
-
-      if (!tenant) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Tenant not found",
         });
       }
 
@@ -153,9 +138,10 @@ export const checkoutRouter = createTRPCRouter({
         totalAmount * (PLATFORM_FEE_PERCENTAGE / 100),
       );
 
+      const domain = generateTenantURL(tenant.slug);
       const checkout = await stripe.checkout.sessions.create(
         {
-          customer_email: ctx.session.user.email,
+          customer_email: ctx.user.email,
           success_url: `${domain}/checkout?success=true`,
           cancel_url: `${domain}/checkout?cancel=true`,
           mode: "payment",
@@ -164,7 +150,7 @@ export const checkoutRouter = createTRPCRouter({
             enabled: true,
           },
           metadata: {
-            userId: ctx.session.user.id,
+            userId: ctx.user.id,
           } as CheckoutMetadata,
           payment_intent_data: {
             application_fee_amount: platformFeeAmount,
@@ -193,10 +179,28 @@ export const checkoutRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const uniqueIds = [...new Set(input.ids)];
+
+      if (uniqueIds.length === 0) {
+        return {
+          docs: [],
+          totalDocs: 0,
+          totalPrice: 0,
+        };
+      }
+
+      const tenant = await findTenantBySlug(ctx.db, input.tenantSlug);
+
+      if (!tenant) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tenant not found",
+        });
+      }
+
       const data = await ctx.db.find({
         collection: "products",
         depth: 2, // Populate "category", "image", "tenant" & "tenant.image"
-        where: {
+        where: tenantWhere(tenant.id, {
           and: [
             {
               id: {
@@ -209,12 +213,10 @@ export const checkoutRouter = createTRPCRouter({
               },
             },
           ],
-        },
+        }),
       });
-      const tenantMismatch = data.docs.some(
-        (doc) => (doc.tenant as Tenant)?.slug !== input.tenantSlug,
-      );
-      if (data.totalDocs !== uniqueIds.length || tenantMismatch) {
+
+      if (data.totalDocs !== uniqueIds.length) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Products not found",

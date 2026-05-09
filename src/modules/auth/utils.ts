@@ -7,14 +7,16 @@ interface Props {
 
 export const generateAuthCookie = async ({ prefix, value }: Props) => {
   const cookies = await getCookies();
+  const isProduction = process.env.NODE_ENV === "production";
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
 
   cookies.set({
     name: `${prefix}-token`,
     value: value,
     httpOnly: true,
     path: "/",
-    sameSite: "none",
-    domain: process.env.NEXT_PUBLIC_ROOT_DOMAIN,
-    secure: process.env.NODE_ENV === "production",
+    sameSite: isProduction ? "none" : "lax",
+    domain: isProduction && rootDomain ? rootDomain : undefined,
+    secure: isProduction,
   });
 };

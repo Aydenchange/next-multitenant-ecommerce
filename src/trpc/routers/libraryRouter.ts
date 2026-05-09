@@ -4,6 +4,7 @@ import { PRODUCTS_LIMIT } from "@/constants";
 import { Media, Product, Tenant } from "@/payload-types";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
+import { tenantWhere, toTenantId } from "@/lib/tenant";
 
 const isPopulatedTenant = (value: Product["tenant"]): value is Tenant =>
   typeof value === "object" && value !== null;
@@ -33,7 +34,7 @@ export const libraryRouter = createTRPCRouter({
             },
             {
               user: {
-                equals: ctx.session.user.id,
+                equals: ctx.user.id,
               },
             },
           ],
@@ -49,10 +50,27 @@ export const libraryRouter = createTRPCRouter({
         });
       }
 
-      const product = await ctx.db.findByID({
-        collection: "products",
-        id: input.productId,
-      });
+      const orderTenantId = toTenantId(
+        (order as { tenant?: string | Tenant }).tenant,
+      );
+
+      const product = orderTenantId
+        ? (
+            await ctx.db.find({
+              collection: "products",
+              limit: 1,
+              pagination: false,
+              where: tenantWhere(orderTenantId, {
+                id: {
+                  equals: input.productId,
+                },
+              }),
+            })
+          ).docs[0]
+        : await ctx.db.findByID({
+            collection: "products",
+            id: input.productId,
+          });
 
       if (!product) {
         throw new TRPCError({
@@ -78,7 +96,7 @@ export const libraryRouter = createTRPCRouter({
         limit: input.limit,
         where: {
           user: {
-            equals: ctx.session.user.id,
+            equals: ctx.user.id,
           },
         },
       });
@@ -126,7 +144,7 @@ export const libraryRouter = createTRPCRouter({
                     ...tenant,
                     image: isPopulatedMedia(tenant.image) ? tenant.image : null,
                   }
-                : product.tenant,
+                : null,
             },
           ];
         }),
@@ -138,14 +156,21 @@ export const libraryRouter = createTRPCRouter({
 
       const dataWithSummarizedReviews = await Promise.all(
         docs.map(async (doc) => {
+          const productTenantId = toTenantId(doc.tenant);
           const reviewsData = await ctx.db.find({
             collection: "reviews",
             pagination: false,
-            where: {
-              product: {
-                equals: doc.id,
-              },
-            },
+            where: productTenantId
+              ? tenantWhere(productTenantId, {
+                  product: {
+                    equals: doc.id,
+                  },
+                })
+              : {
+                  product: {
+                    equals: doc.id,
+                  },
+                },
           });
 
           return {

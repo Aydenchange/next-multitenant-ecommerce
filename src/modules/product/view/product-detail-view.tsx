@@ -3,7 +3,7 @@
 // TODO: Add real ratings
 import Link from "next/link";
 import Image from "next/image";
-import { Fragment, useState } from "react";
+import { Fragment, useState, type ComponentProps } from "react";
 import { CheckIcon, LinkIcon, StarIcon } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
@@ -15,6 +15,8 @@ import { Progress } from "@/components/ui/progress";
 import { formatCurrency, generateTenantURL } from "@/lib/utils";
 import { StarRating } from "@/components/star-rating";
 import { toast } from "sonner";
+
+type RichTextData = ComponentProps<typeof RichText>["data"];
 
 const CartButton = dynamic(
   () => import("../ui/cart-button").then((mod) => mod.CartButton),
@@ -40,7 +42,7 @@ export const ProductDetailView = ({
   const [isCopied, setIsCopied] = useState(false);
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(
-    trpc.products.getOne.queryOptions({ id: productId }),
+    trpc.products.getOne.queryOptions({ id: productId, tenantSlug }),
   );
 
   return (
@@ -112,7 +114,7 @@ export const ProductDetailView = ({
 
             <div className="p-6">
               {data.description ? (
-                <RichText data={data.description} />
+                <RichText data={data.description as unknown as RichTextData} />
               ) : (
                 <p className="font-medium text-muted-foreground italic">
                   No description provided

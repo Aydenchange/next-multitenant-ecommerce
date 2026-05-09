@@ -11,10 +11,10 @@ const Page = () => {
   const { mutate: verify } = useMutation(
     trpc.checkout.verify.mutationOptions({
       onSuccess: (data) => {
-        window.location.href = data.url;
+        window.location.assign(data.url);
       },
       onError: () => {
-        window.location.href = "/";
+        window.location.assign("/");
       },
     }),
   );

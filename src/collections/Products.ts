@@ -9,6 +9,16 @@ export const Products: CollectionConfig = {
     description: "You must verify your account before creating products",
   },
   access: {
+    read: ({ req }) => {
+      if (isSuperAdmin(req.user)) return true;
+      const tenantId = req.user?.tenants?.[0]?.tenant;
+      if (!tenantId) return false;
+      return {
+        tenant: {
+          equals: typeof tenantId === "string" ? tenantId : tenantId.id,
+        },
+      };
+    },
     create: ({ req }) => {
       if (isSuperAdmin(req.user)) return true;
       const tenant = req.user?.tenants?.[0]?.tenant as Tenant;

@@ -4,7 +4,16 @@ import type { CollectionConfig } from "payload";
 export const Orders: CollectionConfig = {
   slug: "orders",
   access: {
-    read: ({ req }) => isSuperAdmin(req.user),
+    read: ({ req }) => {
+      if (isSuperAdmin(req.user)) return true;
+      const tenantId = req.user?.tenants?.[0]?.tenant;
+      if (!tenantId) return false;
+      return {
+        tenant: {
+          equals: typeof tenantId === "string" ? tenantId : tenantId.id,
+        },
+      };
+    },
     create: ({ req }) => isSuperAdmin(req.user),
     update: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
@@ -13,6 +22,17 @@ export const Orders: CollectionConfig = {
     useAsTitle: "name",
   },
   fields: [
+    {
+      name: "tenant",
+      type: "relationship",
+      relationTo: "tenants",
+      required: true,
+      index: true,
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+      },
+    },
     {
       name: "name",
       type: "text",

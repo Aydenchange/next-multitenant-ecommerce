@@ -1,11 +1,11 @@
 import z from "zod";
-import { headers as getHeaders } from "next/headers";
 import { TRPCError } from "@trpc/server";
 import { Sort, Where } from "payload";
 
 import { baseProcedure, createTRPCRouter } from "../init";
 import { Category, Media, Product, Tenant } from "@/payload-types";
 import { ProductSort, productSortValues } from "@/constants";
+import { findTenantBySlug, tenantWhere, toTenantId } from "@/lib/tenant";
 
 const normalizeSlug = (value?: string | null) => value?.trim().toLowerCase();
 
@@ -31,19 +31,53 @@ export const productsRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
+        tenantSlug: z.string().nullable().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const headers = await getHeaders();
-      const session = await ctx.db.auth({ headers });
-      const product = await ctx.db.findByID({
-        collection: "products",
-        id: input.id,
-        depth: 2, // Load the "product.image", "product.tenant", and "product.tenant.image"
-        select: {
-          content: false,
-        },
-      });
+      const tenant = input.tenantSlug
+        ? await findTenantBySlug(ctx.db, input.tenantSlug)
+        : null;
+
+      if (input.tenantSlug && !tenant) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tenant not found",
+        });
+      }
+
+      const product = input.tenantSlug
+        ? (
+            await ctx.db.find({
+              collection: "products",
+              depth: 2,
+              limit: 1,
+              pagination: false,
+              where: tenantWhere(tenant!.id, {
+                id: {
+                  equals: input.id,
+                },
+              }),
+              select: {
+                content: false,
+              },
+            })
+          ).docs[0]
+        : await ctx.db.findByID({
+            collection: "products",
+            id: input.id,
+            depth: 2,
+            select: {
+              content: false,
+            },
+          });
+
+      if (!product) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Product not found",
+        });
+      }
 
       if (product.isArchived) {
         throw new TRPCError({
@@ -53,25 +87,30 @@ export const productsRouter = createTRPCRouter({
       }
 
       let isPurchased = false;
+      const productTenantId = toTenantId(product.tenant);
 
-      if (session.user) {
+      if (ctx.user) {
+        const purchasedWhere: Where = {
+          and: [
+            {
+              product: {
+                equals: input.id,
+              },
+            },
+            {
+              user: {
+                equals: ctx.user.id,
+              },
+            },
+          ],
+        };
+
         const ordersData = await ctx.db.find({
           collection: "orders",
           limit: 1,
-          where: {
-            and: [
-              {
-                product: {
-                  equals: input.id,
-                },
-              },
-              {
-                user: {
-                  equals: session.user.id,
-                },
-              },
-            ],
-          },
+          where: productTenantId
+            ? tenantWhere(productTenantId, purchasedWhere)
+            : purchasedWhere,
         });
 
         isPurchased = !!ordersData.docs[0];
@@ -80,11 +119,17 @@ export const productsRouter = createTRPCRouter({
       const reviews = await ctx.db.find({
         collection: "reviews",
         pagination: false,
-        where: {
-          product: {
-            equals: input.id,
-          },
-        },
+        where: productTenantId
+          ? tenantWhere(productTenantId, {
+              product: {
+                equals: input.id,
+              },
+            })
+          : {
+              product: {
+                equals: input.id,
+              },
+            },
       });
 
       const reviewRating =
@@ -130,7 +175,7 @@ export const productsRouter = createTRPCRouter({
                 ? product.tenant.image
                 : null,
             }
-          : product.tenant,
+          : null,
         reviewRating,
         reviewCount: reviews.totalDocs,
         ratingDistribution,
@@ -151,22 +196,12 @@ export const productsRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // const headers = await getHeader();
-      // const { user } = await ctx.db.auth({ headers });
-
-      // if (!user) {
-      //   throw new TRPCError({
-      //     code: "UNAUTHORIZED",
-      //     message: "Please sign in to view products",
-      //   });
-      // }
-
       const categorySlug = normalizeSlug(input.categorySlug);
       const subCategorySlug = normalizeSlug(input.subCategorySlug);
       const tagIds = [
         ...new Set((input.tags ?? []).map((tag) => tag.trim()).filter(Boolean)),
       ];
-      const where: Where = {
+      let where: Where = {
         isArchived: {
           not_equals: true,
         },
@@ -211,11 +246,18 @@ export const productsRouter = createTRPCRouter({
       }
 
       if (input.tenantSlug) {
-        where["tenant.slug"] = {
-          equals: input.tenantSlug,
-        };
+        const tenant = await findTenantBySlug(ctx.db, input.tenantSlug);
+
+        if (!tenant) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Tenant not found",
+          });
+        }
+
+        where = tenantWhere(tenant.id, where);
       } else {
-        where["isPrivate"] = {
+        where.isPrivate = {
           not_equals: true,
         };
       }
@@ -329,15 +371,22 @@ export const productsRouter = createTRPCRouter({
       });
 
       const dataWithSummarizedReviews = await Promise.all(
-        data.docs.map(async (doc) => {
+        docs.map(async (doc) => {
+          const productTenantId = toTenantId(doc.tenant);
           const reviewsData = await ctx.db.find({
             collection: "reviews",
             pagination: false,
-            where: {
-              product: {
-                equals: doc.id,
-              },
-            },
+            where: productTenantId
+              ? tenantWhere(productTenantId, {
+                  product: {
+                    equals: doc.id,
+                  },
+                })
+              : {
+                  product: {
+                    equals: doc.id,
+                  },
+                },
           });
 
           return {

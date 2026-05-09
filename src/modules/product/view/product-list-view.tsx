@@ -41,7 +41,13 @@ const ProductListView = ({
         {data?.pages
           .flatMap((page) => page.docs)
           .flatMap((product) => {
-            const tenantSlug = product.tenant?.slug;
+            const tenant =
+              typeof product.tenant === "object" ? product.tenant : null;
+            const image =
+              typeof product.image === "object" ? product.image : null;
+            const tenantImage =
+              typeof tenant?.image === "object" ? tenant.image : null;
+            const tenantSlug = tenant?.slug;
 
             if (!tenantSlug) {
               return [];
@@ -53,9 +59,9 @@ const ProductListView = ({
                 id={product.id}
                 name={product.name}
                 tenantSlug={tenantSlug}
-                imageUrl={product.image?.url || undefined}
-                authorUsername={product.tenant?.name || "Unknown"}
-                authorImageUrl={product.tenant?.image?.url || undefined}
+                imageUrl={image?.url || undefined}
+                authorUsername={tenant?.name || "Unknown"}
+                authorImageUrl={tenantImage?.url || undefined}
                 reviewRating={product.reviewRating}
                 reviewCount={product.reviewCount}
                 price={product.price}

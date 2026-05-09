@@ -34,18 +34,31 @@ export const ProductList = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         {data?.pages
           .flatMap((page) => page.docs)
-          .map((product) => (
-            <ProductCard
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              imageUrl={product.image?.url}
-              tenantSlug={product.tenant?.slug}
-              tenantImageUrl={product.tenant?.image?.url}
-              reviewRating={product.reviewRating}
-              reviewCount={product.reviewCount}
-            />
-          ))}
+          .flatMap((product) => {
+            const tenant =
+              typeof product.tenant === "object" ? product.tenant : null;
+            const image =
+              typeof product.image === "object" ? product.image : null;
+            const tenantImage =
+              typeof tenant?.image === "object" ? tenant.image : null;
+
+            if (!tenant?.slug) {
+              return [];
+            }
+
+            return [
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                imageUrl={image?.url}
+                tenantSlug={tenant.slug}
+                tenantImageUrl={tenantImage?.url}
+                reviewRating={product.reviewRating}
+                reviewCount={product.reviewCount}
+              />,
+            ];
+          })}
       </div>
       <div className="flex justify-center pt-8">
         {hasNextPage && (

@@ -1,4 +1,3 @@
-import { headers as getHeader } from "next/headers";
 import { TRPCError } from "@trpc/server";
 
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
@@ -8,9 +7,7 @@ import { stripe } from "@/lib/stripe";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
-    const headers = await getHeader();
-    const session = ctx.db.auth({ headers });
-    return session;
+    return ctx.session;
   }),
   register: baseProcedure
     .input(registerSchema)

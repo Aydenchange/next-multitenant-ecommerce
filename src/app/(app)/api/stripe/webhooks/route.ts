@@ -82,14 +82,64 @@ export async function POST(req: Request) {
             .data as ExpandedLineItem[];
 
           for (const item of lineItems) {
+            const product = await payload.findByID({
+              collection: "products",
+              id: item.price.product.metadata.id,
+              depth: 0,
+            });
+
+            if (!product?.tenant) {
+              throw new Error("Product or product tenant not found");
+            }
+
+            const tenantId =
+              typeof product.tenant === "string"
+                ? product.tenant
+                : product.tenant.id;
+
+            const tenant = await payload.findByID({
+              collection: "tenants",
+              id: tenantId,
+              depth: 0,
+            });
+
+            if (event.account && tenant.stripeAccountId !== event.account) {
+              throw new Error("Stripe account does not match product tenant");
+            }
+
+            const existingOrder = await payload.find({
+              collection: "orders",
+              limit: 1,
+              pagination: false,
+              where: {
+                and: [
+                  {
+                    stripeCheckoutSessionId: {
+                      equals: data.id,
+                    },
+                  },
+                  {
+                    product: {
+                      equals: product.id,
+                    },
+                  },
+                ],
+              },
+            });
+
+            if (existingOrder.docs[0]) {
+              continue;
+            }
+
             await payload.create({
               collection: "orders",
               data: {
+                tenant: tenant.id,
                 stripeCheckoutSessionId: data.id,
                 stripeAccountId: event.account,
                 user: user.id,
-                product: item.price.product.metadata.id,
-                name: item.price.product.name,
+                product: product.id,
+                name: product.name,
               },
             });
           }
