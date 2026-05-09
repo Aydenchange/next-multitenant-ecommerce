@@ -10,6 +10,8 @@ import ProductListView, {
   ProductListSkeleton,
 } from "@/modules/product/view/product-list-view";
 
+export const dynamic = "force-dynamic";
+
 type props = {
   params: Promise<{ category: string; subcategory: string }>;
   searchParams: Promise<SearchParams>;

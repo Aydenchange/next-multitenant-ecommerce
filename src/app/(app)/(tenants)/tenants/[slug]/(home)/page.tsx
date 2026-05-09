@@ -9,6 +9,8 @@ import ProductListView, {
 } from "@/modules/product/view/product-list-view";
 import ProductListLayout from "@/modules/product/ui/product-list-layout";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   searchParams: Promise<SearchParams>;
   params: Promise<{ slug: string }>;

@@ -37,3 +37,5 @@ export const tagsInfiniteQueryInput = {
 
 export const getTagsNextPageParam = (lastPage: TagsInfinitePage) =>
   lastPage.nextCursor;
+
+export const PLATFORM_FEE_PERCENTAGE = 10;

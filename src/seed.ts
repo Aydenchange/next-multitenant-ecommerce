@@ -1,5 +1,6 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
+import { stripe } from "./lib/stripe";
 
 const categories = [
   {
@@ -140,13 +141,15 @@ const categories = [
 const seed = async () => {
   const payload = await getPayload({ config });
 
+  const adminAccount = await stripe.accounts.create({});
+
   // Create admin tenant
   const adminTenant = await payload.create({
     collection: "tenants",
     data: {
       name: "admin",
       slug: "admin",
-      stripeAccountId: "admin",
+      stripeAccountId: adminAccount.id,
     },
   });
 
@@ -192,9 +195,9 @@ const seed = async () => {
 
 try {
   await seed();
-  console.log("Seeding completed successfully");
+  console.log("Script completed successfully");
   process.exit(0);
 } catch (error) {
-  console.error("Error during seeding:", error);
+  console.error("Error while running script:", error);
   process.exit(1); // Exit with error code
 }

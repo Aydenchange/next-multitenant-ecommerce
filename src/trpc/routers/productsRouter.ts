@@ -40,7 +40,17 @@ export const productsRouter = createTRPCRouter({
         collection: "products",
         id: input.id,
         depth: 2, // Load the "product.image", "product.tenant", and "product.tenant.image"
+        select: {
+          content: false,
+        },
       });
+
+      if (product.isArchived) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Product not found",
+        });
+      }
 
       let isPurchased = false;
 
@@ -156,7 +166,11 @@ export const productsRouter = createTRPCRouter({
       const tagIds = [
         ...new Set((input.tags ?? []).map((tag) => tag.trim()).filter(Boolean)),
       ];
-      const where: Where = {};
+      const where: Where = {
+        isArchived: {
+          not_equals: true,
+        },
+      };
 
       let sort: Sort = "-createdAt";
 
@@ -199,6 +213,10 @@ export const productsRouter = createTRPCRouter({
       if (input.tenantSlug) {
         where["tenant.slug"] = {
           equals: input.tenantSlug,
+        };
+      } else {
+        where["isPrivate"] = {
+          not_equals: true,
         };
       }
 
@@ -283,6 +301,9 @@ export const productsRouter = createTRPCRouter({
         sort,
         page,
         limit: input.limit,
+        select: {
+          content: false,
+        },
         // overrideAccess: false,
         // user,
       });

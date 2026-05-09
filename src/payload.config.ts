@@ -1,6 +1,7 @@
 import { mongooseAdapter } from "@payloadcms/db-mongodb";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
 import path from "path";
 import { buildConfig } from "payload";
 import { fileURLToPath } from "url";
@@ -14,6 +15,7 @@ import { Tags } from "./collections/Tags.ts";
 import { Tenants } from "./collections/Tenants.ts";
 import { Orders } from "./collections/Orders.ts";
 import { Reviews } from "./collections/Reviews.ts";
+import { isSuperAdmin } from "./lib/access.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -23,6 +25,9 @@ export default buildConfig({
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
+    },
+    components: {
+      beforeNavLinks: ["@/components/stripe-verify#StripeVerify"],
     },
   },
   collections: [
@@ -52,8 +57,14 @@ export default buildConfig({
       tenantsArrayField: {
         includeDefaultField: false,
       },
-      userHasAccessToAllTenants: (user) =>
-        Boolean(user?.roles?.includes("super-admin")),
+      userHasAccessToAllTenants: (user) => isSuperAdmin(user),
+    }),
+    vercelBlobStorage({
+      enabled: true,
+      collections: {
+        media: true,
+      },
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     }),
   ],
 });

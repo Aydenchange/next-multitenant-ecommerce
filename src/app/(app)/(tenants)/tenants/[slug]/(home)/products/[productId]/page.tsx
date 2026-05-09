@@ -2,7 +2,12 @@ import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Suspense } from "react";
 
-import { ProductDetailView } from "@/modules/product/view/product-detail-view";
+import {
+  ProductDetailView,
+  ProductViewSkeleton,
+} from "@/modules/product/view/product-detail-view";
+
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ slug: string; productId: string }>;
@@ -20,7 +25,7 @@ const Page = async ({ params }: PageProps) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<ProductViewSkeleton />}>
         <ProductDetailView tenantSlug={slug} productId={productId} />
       </Suspense>
     </HydrationBoundary>

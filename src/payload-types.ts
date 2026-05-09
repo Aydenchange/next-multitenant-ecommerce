@@ -181,6 +181,9 @@ export interface Tenant {
    */
   slug: string;
   image?: (string | null) | Media;
+  /**
+   * Stripe Account ID associated with your shop
+   */
   stripeAccountId: string;
   /**
    * You cannot create products until you submit your Stripe details
@@ -227,6 +230,8 @@ export interface Category {
   createdAt: string;
 }
 /**
+ * You must verify your account before creating products
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
  */
@@ -234,7 +239,21 @@ export interface Product {
   id: string;
   tenant?: (string | null) | Tenant;
   name: string;
-  description?: string | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   /**
    * Price in USD
    */
@@ -243,6 +262,32 @@ export interface Product {
   tags?: (string | Tag)[] | null;
   image?: (string | null) | Media;
   refundPolicy?: ('30-day' | '14-day' | '7-day' | '3-day' | '1-day' | 'no-refunds') | null;
+  /**
+   * Protected content only visible to customers after purchase...
+   */
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * If checked, this product will not be shown on the public storefront
+   */
+  isPrivate?: boolean | null;
+  /**
+   * If checked, this product will be archived
+   */
+  isArchived?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -267,6 +312,10 @@ export interface Order {
   user: string | User;
   product: string | Product;
   stripeCheckoutSessionId: string;
+  /**
+   * Stripe account associated with the order
+   */
+  stripeAccountId?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -455,6 +504,9 @@ export interface ProductsSelect<T extends boolean = true> {
   tags?: T;
   image?: T;
   refundPolicy?: T;
+  content?: T;
+  isPrivate?: T;
+  isArchived?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -490,6 +542,7 @@ export interface OrdersSelect<T extends boolean = true> {
   user?: T;
   product?: T;
   stripeCheckoutSessionId?: T;
+  stripeAccountId?: T;
   updatedAt?: T;
   createdAt?: T;
 }
