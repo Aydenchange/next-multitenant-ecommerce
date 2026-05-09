@@ -51,6 +51,7 @@ export const Reviews: CollectionConfig = {
       relationTo: "products",
       hasMany: false,
       required: true,
+      index: true,
     },
     {
       name: "user",
@@ -58,6 +59,7 @@ export const Reviews: CollectionConfig = {
       relationTo: "users",
       hasMany: false,
       required: true,
+      index: true,
     },
   ],
 };

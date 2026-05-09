@@ -6,6 +6,10 @@ import { baseProcedure, createTRPCRouter } from "../init";
 import { Category, Media, Product, Tenant } from "@/payload-types";
 import { ProductSort, productSortValues } from "@/constants";
 import { findTenantBySlug, tenantWhere, toTenantId } from "@/lib/tenant";
+import {
+  getReviewSummariesByProductIds,
+  getReviewSummaryForProduct,
+} from "@/lib/review-summary";
 
 const normalizeSlug = (value?: string | null) => value?.trim().toLowerCase();
 
@@ -116,53 +120,7 @@ export const productsRouter = createTRPCRouter({
         isPurchased = !!ordersData.docs[0];
       }
 
-      const reviews = await ctx.db.find({
-        collection: "reviews",
-        pagination: false,
-        where: productTenantId
-          ? tenantWhere(productTenantId, {
-              product: {
-                equals: input.id,
-              },
-            })
-          : {
-              product: {
-                equals: input.id,
-              },
-            },
-      });
-
-      const reviewRating =
-        reviews.docs.length > 0
-          ? reviews.docs.reduce((acc, review) => acc + review.rating, 0) /
-            reviews.totalDocs
-          : 0;
-
-      const ratingDistribution: Record<number, number> = {
-        5: 0,
-        4: 0,
-        3: 0,
-        2: 0,
-        1: 0,
-      };
-
-      if (reviews.totalDocs > 0) {
-        reviews.docs.forEach((review) => {
-          const rating = review.rating;
-
-          if (rating >= 1 && rating <= 5) {
-            ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
-          }
-        });
-
-        Object.keys(ratingDistribution).forEach((key) => {
-          const rating = Number(key);
-          const count = ratingDistribution[rating] || 0;
-          ratingDistribution[rating] = Math.round(
-            (count / reviews.totalDocs) * 100,
-          );
-        });
-      }
+      const reviewSummary = await getReviewSummaryForProduct(ctx.db, product);
 
       return {
         ...product,
@@ -176,9 +134,9 @@ export const productsRouter = createTRPCRouter({
                 : null,
             }
           : null,
-        reviewRating,
-        reviewCount: reviews.totalDocs,
-        ratingDistribution,
+        reviewRating: reviewSummary.reviewRating,
+        reviewCount: reviewSummary.reviewCount,
+        ratingDistribution: reviewSummary.ratingDistribution,
       };
     }),
   getMany: baseProcedure
@@ -370,42 +328,20 @@ export const productsRouter = createTRPCRouter({
         };
       });
 
-      const dataWithSummarizedReviews = await Promise.all(
-        docs.map(async (doc) => {
-          const productTenantId = toTenantId(doc.tenant);
-          const reviewsData = await ctx.db.find({
-            collection: "reviews",
-            pagination: false,
-            where: productTenantId
-              ? tenantWhere(productTenantId, {
-                  product: {
-                    equals: doc.id,
-                  },
-                })
-              : {
-                  product: {
-                    equals: doc.id,
-                  },
-                },
-          });
-
-          return {
-            ...doc,
-            reviewCount: reviewsData.totalDocs,
-            reviewRating:
-              reviewsData.docs.length === 0
-                ? 0
-                : reviewsData.docs.reduce(
-                    (acc, review) => acc + review.rating,
-                    0,
-                  ) / reviewsData.totalDocs,
-          };
-        }),
+      const reviewSummaries = await getReviewSummariesByProductIds(
+        ctx.db,
+        docs.map((doc) => doc.id),
       );
 
       return {
         ...data,
-        docs: dataWithSummarizedReviews,
+        docs: docs.map((doc) => ({
+          ...doc,
+          ...(reviewSummaries.get(doc.id) ?? {
+            reviewCount: 0,
+            reviewRating: 0,
+          }),
+        })),
         nextCursor: data.hasNextPage ? (data.nextPage ?? undefined) : undefined,
       };
     }),

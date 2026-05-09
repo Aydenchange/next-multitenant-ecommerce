@@ -44,6 +44,7 @@ export const Orders: CollectionConfig = {
       relationTo: "users",
       required: true,
       hasMany: false,
+      index: true,
     },
     {
       name: "product",
@@ -51,11 +52,13 @@ export const Orders: CollectionConfig = {
       relationTo: "products",
       required: true,
       hasMany: false,
+      index: true,
     },
     {
       name: "stripeCheckoutSessionId",
       type: "text",
       required: true,
+      index: true,
     },
     {
       name: "stripeAccountId",

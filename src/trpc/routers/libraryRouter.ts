@@ -5,6 +5,7 @@ import { Media, Product, Tenant } from "@/payload-types";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { tenantWhere, toTenantId } from "@/lib/tenant";
+import { getReviewSummariesByProductIds } from "@/lib/review-summary";
 
 const isPopulatedTenant = (value: Product["tenant"]): value is Tenant =>
   typeof value === "object" && value !== null;
@@ -154,41 +155,19 @@ export const libraryRouter = createTRPCRouter({
         .map((id) => productsById.get(id))
         .filter((doc): doc is NonNullable<typeof doc> => !!doc);
 
-      const dataWithSummarizedReviews = await Promise.all(
-        docs.map(async (doc) => {
-          const productTenantId = toTenantId(doc.tenant);
-          const reviewsData = await ctx.db.find({
-            collection: "reviews",
-            pagination: false,
-            where: productTenantId
-              ? tenantWhere(productTenantId, {
-                  product: {
-                    equals: doc.id,
-                  },
-                })
-              : {
-                  product: {
-                    equals: doc.id,
-                  },
-                },
-          });
-
-          return {
-            ...doc,
-            reviewCount: reviewsData.totalDocs,
-            reviewRating:
-              reviewsData.docs.length === 0
-                ? 0
-                : reviewsData.docs.reduce(
-                    (acc, review) => acc + review.rating,
-                    0,
-                  ) / reviewsData.totalDocs,
-          };
-        }),
+      const reviewSummaries = await getReviewSummariesByProductIds(
+        ctx.db,
+        docs.map((doc) => doc.id),
       );
 
       return {
-        docs: dataWithSummarizedReviews,
+        docs: docs.map((doc) => ({
+          ...doc,
+          ...(reviewSummaries.get(doc.id) ?? {
+            reviewCount: 0,
+            reviewRating: 0,
+          }),
+        })),
         nextCursor: ordersData.hasNextPage
           ? (ordersData.nextPage ?? undefined)
           : undefined,
