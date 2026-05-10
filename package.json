@@ -7,11 +7,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "quality": "npm run typecheck && npm run lint && npm run test",
+    "ci": "npm run quality && npm run build",
     "generate:types": "payload generate:types",
     "db:fresh": "payload migrate:fresh"
   },
