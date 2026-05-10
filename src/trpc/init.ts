@@ -6,6 +6,12 @@ import {
   getUserTenantIds,
   resolveTenantSlugFromHeaders,
 } from "@/lib/tenant";
+import {
+  getOrCreateRequestId,
+  getSlowProcedureThresholdMs,
+  logEvent,
+  serializeError,
+} from "@/lib/observability";
 /**
  * This context creator accepts `headers` so it can be reused in both
  * the RSC server caller (where you pass `next/headers`) and the
@@ -15,6 +21,7 @@ export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
   const db = await getPayload({ config });
   const session = await db.auth({ headers: opts.headers });
   const tenantSlug = resolveTenantSlugFromHeaders(opts.headers);
+  const requestId = getOrCreateRequestId(opts.headers);
 
   const tenant = tenantSlug
     ? ((
@@ -35,6 +42,7 @@ export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
     tenantId: tenant?.id ?? null,
     tenantSlug,
     userTenantIds: getUserTenantIds(session.user),
+    requestId,
   };
 });
 // Avoid exporting the entire t-object
@@ -52,7 +60,30 @@ const t = initTRPC
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
-export const baseProcedure = t.procedure;
+export const baseProcedure = t.procedure.use(
+  async ({ ctx, next, path, type }) => {
+    const startedAt = performance.now();
+    const result = await next();
+    const durationMs = Math.round(performance.now() - startedAt);
+    const shouldLog =
+      !result.ok || durationMs >= getSlowProcedureThresholdMs();
+
+    if (shouldLog) {
+      logEvent(result.ok ? "warn" : "error", "tRPC procedure completed", {
+        requestId: ctx.requestId,
+        path,
+        type,
+        durationMs,
+        status: result.ok ? "slow" : "error",
+        tenantId: ctx.tenantId,
+        userId: ctx.user?.id,
+        error: result.ok ? undefined : serializeError(result.error),
+      });
+    }
+
+    return result;
+  },
+);
 
 export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
   if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
