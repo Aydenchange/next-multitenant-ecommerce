@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 
 import { ExpandedLineItem } from "@/modules/checkout/types";
+import { logEvent, serializeError } from "@/lib/observability";
 
 export async function POST(req: Request) {
   let event: Stripe.Event;
@@ -20,18 +21,14 @@ export async function POST(req: Request) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
 
-    if (error! instanceof Error) {
-      console.log(error);
-    }
-
-    console.log(`❌ Error message: ${errorMessage}`);
+    logEvent("warn", "Stripe webhook signature verification failed", {
+      error: serializeError(error),
+    });
     return NextResponse.json(
       { message: `Webhook Error: ${errorMessage}` },
       { status: 400 },
     );
   }
-
-  console.log("✅ Success:", event.id);
 
   const permittedEvents: string[] = [
     "checkout.session.completed",
@@ -39,6 +36,33 @@ export async function POST(req: Request) {
   ];
 
   const payload = await getPayload({ config });
+  const existingEvent = await payload.find({
+    collection: "webhook-events",
+    limit: 1,
+    pagination: false,
+    where: {
+      eventId: {
+        equals: event.id,
+      },
+    },
+  });
+  const existingEventDoc = existingEvent.docs[0];
+
+  if (existingEventDoc?.status === "processed") {
+    return NextResponse.json({ message: "Already processed" }, { status: 200 });
+  }
+
+  const webhookEvent =
+    existingEventDoc ??
+    (await payload.create({
+      collection: "webhook-events",
+      data: {
+        eventId: event.id,
+        type: event.type,
+        status: "processing",
+        stripeAccountId: event.account,
+      },
+    }));
 
   if (permittedEvents.includes(event.type)) {
     let data;
@@ -47,6 +71,15 @@ export async function POST(req: Request) {
       switch (event.type) {
         case "checkout.session.completed":
           data = event.data.object as Stripe.Checkout.Session;
+
+          await payload.update({
+            collection: "webhook-events",
+            id: webhookEvent.id,
+            data: {
+              checkoutSessionId: data.id,
+              status: "processing",
+            },
+          });
 
           if (!data.metadata?.userId) {
             throw new Error("User ID is required");
@@ -163,13 +196,47 @@ export async function POST(req: Request) {
         default:
           throw new Error(`Unhandled event: ${event.type}`);
       }
+
+      await payload.update({
+        collection: "webhook-events",
+        id: webhookEvent.id,
+        data: {
+          status: "processed",
+          processedAt: new Date().toISOString(),
+          error: null,
+        },
+      });
     } catch (error) {
-      console.log(error);
+      await payload.update({
+        collection: "webhook-events",
+        id: webhookEvent.id,
+        data: {
+          status: "failed",
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+
+      logEvent("error", "Stripe webhook handler failed", {
+        eventId: event.id,
+        type: event.type,
+        stripeAccountId: event.account,
+        error: serializeError(error),
+      });
+
       return NextResponse.json(
         { message: "Webhook handler failed" },
         { status: 500 },
       );
     }
+  } else {
+    await payload.update({
+      collection: "webhook-events",
+      id: webhookEvent.id,
+      data: {
+        status: "skipped",
+        processedAt: new Date().toISOString(),
+      },
+    });
   }
 
   return NextResponse.json({ message: "Received" }, { status: 200 });

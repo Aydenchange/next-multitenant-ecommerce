@@ -15,6 +15,7 @@ import { Tags } from "./collections/Tags.ts";
 import { Tenants } from "./collections/Tenants.ts";
 import { Orders } from "./collections/Orders.ts";
 import { Reviews } from "./collections/Reviews.ts";
+import { WebhookEvents } from "./collections/WebhookEvents.ts";
 import { isSuperAdmin } from "./lib/access.ts";
 
 const filename = fileURLToPath(import.meta.url);
@@ -39,6 +40,7 @@ export default buildConfig({
     Tenants,
     Orders,
     Reviews,
+    WebhookEvents,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
