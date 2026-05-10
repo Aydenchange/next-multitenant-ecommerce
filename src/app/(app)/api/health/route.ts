@@ -3,6 +3,7 @@ import { getPayload } from "payload";
 import { NextResponse } from "next/server";
 
 import { logEvent, serializeError } from "@/lib/observability";
+import { getServerEnvStatus } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -39,13 +40,14 @@ const checkDatabase = async (): Promise<HealthCheck> => {
 };
 
 const checkEnv = (): HealthCheck => {
-  const requiredEnvVars = ["DATABASE_URL", "PAYLOAD_SECRET"];
-  const missing = requiredEnvVars.filter((key) => !process.env[key]);
+  const status = getServerEnvStatus();
 
-  if (missing.length > 0) {
+  if (!status.ok) {
     return {
       ok: false,
-      error: `Missing required environment variables: ${missing.join(", ")}`,
+      error: status.issues
+        .map((issue) => `${issue.path}: ${issue.message}`)
+        .join("; "),
     };
   }
 

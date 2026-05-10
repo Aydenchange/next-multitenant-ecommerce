@@ -7,15 +7,17 @@ import { stripe } from "@/lib/stripe";
 
 import { ExpandedLineItem } from "@/modules/checkout/types";
 import { logEvent, serializeError } from "@/lib/observability";
+import { getServerEnv } from "@/lib/env";
 
 export async function POST(req: Request) {
   let event: Stripe.Event;
+  const env = getServerEnv();
 
   try {
     event = stripe.webhooks.constructEvent(
       await (await req.blob()).text(),
       req.headers.get("stripe-signature") as string,
-      process.env.STRIPE_WEBHOOK_SECRET as string,
+      env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (error) {
     const errorMessage =

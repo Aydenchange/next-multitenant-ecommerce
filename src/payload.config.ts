@@ -17,9 +17,11 @@ import { Orders } from "./collections/Orders.ts";
 import { Reviews } from "./collections/Reviews.ts";
 import { WebhookEvents } from "./collections/WebhookEvents.ts";
 import { isSuperAdmin } from "./lib/access.ts";
+import { getServerEnv } from "./lib/env.ts";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
+const env = getServerEnv();
 
 export default buildConfig({
   admin: {
@@ -43,12 +45,12 @@ export default buildConfig({
     WebhookEvents,
   ],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || "",
+  secret: env.PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
   db: mongooseAdapter({
-    url: process.env.DATABASE_URL || "",
+    url: env.DATABASE_URL,
   }),
   sharp,
   plugins: [
@@ -66,7 +68,7 @@ export default buildConfig({
       collections: {
         media: true,
       },
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: env.BLOB_READ_WRITE_TOKEN,
     }),
   ],
 });
