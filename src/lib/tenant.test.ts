@@ -20,18 +20,23 @@ const makeTenant = (id: string): Tenant => ({
 describe("tenant helpers", () => {
   it("resolves tenant slug from a subdomain host", () => {
     const previousRootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+    const previousAppUrl = process.env.NEXT_PUBLIC_APP_URL;
     process.env.NEXT_PUBLIC_ROOT_DOMAIN = "example.com";
+    process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
 
     const headers = new Headers({ host: "acme.example.com" });
 
     expect(resolveTenantSlugFromHeaders(headers)).toBe("acme");
 
     process.env.NEXT_PUBLIC_ROOT_DOMAIN = previousRootDomain;
+    process.env.NEXT_PUBLIC_APP_URL = previousAppUrl;
   });
 
   it("does not trust caller-provided x-tenant-slug headers", () => {
     const previousRootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+    const previousAppUrl = process.env.NEXT_PUBLIC_APP_URL;
     process.env.NEXT_PUBLIC_ROOT_DOMAIN = "example.com";
+    process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
 
     const headers = new Headers({
       host: "app.example.com",
@@ -41,6 +46,7 @@ describe("tenant helpers", () => {
     expect(resolveTenantSlugFromHeaders(headers)).toBe("app");
 
     process.env.NEXT_PUBLIC_ROOT_DOMAIN = previousRootDomain;
+    process.env.NEXT_PUBLIC_APP_URL = previousAppUrl;
   });
 
   it("normalizes tenant ids from string or populated tenant relationships", () => {

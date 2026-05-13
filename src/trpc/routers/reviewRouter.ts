@@ -2,6 +2,7 @@ import z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { tenantWhere, toTenantId } from "@/lib/tenant";
 
 export const reviewsRouter = createTRPCRouter({
@@ -71,6 +72,15 @@ export const reviewsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      enforceRateLimit({
+        key: `reviews:create:user:${ctx.user.id}`,
+        limit: 20,
+        windowMs: 60 * 60 * 1000,
+        requestId: ctx.requestId,
+        userId: ctx.user.id,
+        tenantId: ctx.tenantId,
+      });
+
       const product = await ctx.db.findByID({
         collection: "products",
         id: input.productId,
@@ -150,6 +160,15 @@ export const reviewsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      enforceRateLimit({
+        key: `reviews:update:user:${ctx.user.id}`,
+        limit: 60,
+        windowMs: 60 * 60 * 1000,
+        requestId: ctx.requestId,
+        userId: ctx.user.id,
+        tenantId: ctx.tenantId,
+      });
+
       const existingReview = await ctx.db.findByID({
         depth: 0,
         collection: "reviews",

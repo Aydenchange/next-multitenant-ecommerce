@@ -12,9 +12,19 @@ import { CheckoutMetadata, ProductMetadata } from "@/modules/checkout/types";
 import { PLATFORM_FEE_PERCENTAGE } from "@/constants";
 import { generateTenantURL } from "@/lib/utils";
 import { findTenantBySlug, tenantWhere } from "@/lib/tenant";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export const checkoutRouter = createTRPCRouter({
   verify: protectedProcedure.mutation(async ({ ctx }) => {
+    enforceRateLimit({
+      key: `checkout:verify:user:${ctx.user.id}`,
+      limit: 5,
+      windowMs: 10 * 60 * 1000,
+      requestId: ctx.requestId,
+      userId: ctx.user.id,
+      tenantId: ctx.tenantId,
+    });
+
     const user = await ctx.db.findByID({
       collection: "users",
       id: ctx.user.id,
@@ -66,6 +76,15 @@ export const checkoutRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      enforceRateLimit({
+        key: `checkout:purchase:user:${ctx.user.id}`,
+        limit: 10,
+        windowMs: 10 * 60 * 1000,
+        requestId: ctx.requestId,
+        userId: ctx.user.id,
+        tenantId: ctx.tenantId,
+      });
+
       type CheckoutSessionCreateParams = NonNullable<
         Parameters<typeof stripe.checkout.sessions.create>[0]
       >;

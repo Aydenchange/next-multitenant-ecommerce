@@ -1,4 +1,5 @@
 import { cookies as getCookies } from "next/headers";
+import { getPublicEnv } from "@/lib/public-env";
 
 interface Props {
   prefix: string;
@@ -8,7 +9,7 @@ interface Props {
 export const generateAuthCookie = async ({ prefix, value }: Props) => {
   const cookies = await getCookies();
   const isProduction = process.env.NODE_ENV === "production";
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+  const rootDomain = getPublicEnv().NEXT_PUBLIC_ROOT_DOMAIN;
 
   cookies.set({
     name: `${prefix}-token`,

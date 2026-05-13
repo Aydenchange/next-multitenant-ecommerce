@@ -1,10 +1,11 @@
 import type { Payload, Where } from "payload";
 
 import type { Tenant, User } from "@/payload-types";
+import { getPublicEnv } from "@/lib/public-env";
 
 export function resolveTenantSlugFromHeaders(headers: Headers) {
   const host = headers.get("host") ?? "";
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "";
+  const rootDomain = getPublicEnv().NEXT_PUBLIC_ROOT_DOMAIN;
 
   if (rootDomain && host.endsWith(`.${rootDomain}`)) {
     return host.replace(`.${rootDomain}`, "").split(":")[0];

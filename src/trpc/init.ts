@@ -12,6 +12,7 @@ import {
   logEvent,
   serializeError,
 } from "@/lib/observability";
+import { getClientIpFromHeaders } from "@/lib/rate-limit";
 /**
  * This context creator accepts `headers` so it can be reused in both
  * the RSC server caller (where you pass `next/headers`) and the
@@ -22,6 +23,8 @@ export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
   const session = await db.auth({ headers: opts.headers });
   const tenantSlug = resolveTenantSlugFromHeaders(opts.headers);
   const requestId = getOrCreateRequestId(opts.headers);
+  const clientIp = getClientIpFromHeaders(opts.headers);
+  const userAgent = opts.headers.get("user-agent") ?? "unknown";
 
   const tenant = tenantSlug
     ? ((
@@ -43,6 +46,8 @@ export const createTRPCContext = cache(async (opts: { headers: Headers }) => {
     tenantSlug,
     userTenantIds: getUserTenantIds(session.user),
     requestId,
+    clientIp,
+    userAgent,
   };
 });
 // Avoid exporting the entire t-object
@@ -77,6 +82,7 @@ export const baseProcedure = t.procedure.use(
         status: result.ok ? "slow" : "error",
         tenantId: ctx.tenantId,
         userId: ctx.user?.id,
+        clientIp: ctx.clientIp,
         error: result.ok ? undefined : serializeError(result.error),
       });
     }

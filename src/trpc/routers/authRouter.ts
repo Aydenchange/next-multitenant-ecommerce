@@ -4,6 +4,7 @@ import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { loginSchema, registerSchema } from "@/modules/auth/schemas";
 import { generateAuthCookie } from "@/modules/auth/utils";
 import { stripe } from "@/lib/stripe";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export const authRouter = createTRPCRouter({
   session: baseProcedure.query(async ({ ctx }) => {
@@ -12,6 +13,13 @@ export const authRouter = createTRPCRouter({
   register: baseProcedure
     .input(registerSchema)
     .mutation(async ({ input, ctx }) => {
+      enforceRateLimit({
+        key: `auth:register:ip:${ctx.clientIp}`,
+        limit: 5,
+        windowMs: 60 * 60 * 1000,
+        requestId: ctx.requestId,
+      });
+
       const existingData = await ctx.db.find({
         collection: "users",
         limit: 1,
@@ -81,6 +89,19 @@ export const authRouter = createTRPCRouter({
       });
     }),
   login: baseProcedure.input(loginSchema).mutation(async ({ input, ctx }) => {
+    enforceRateLimit({
+      key: `auth:login:ip:${ctx.clientIp}`,
+      limit: 30,
+      windowMs: 15 * 60 * 1000,
+      requestId: ctx.requestId,
+    });
+    enforceRateLimit({
+      key: `auth:login:email:${input.email}:ip:${ctx.clientIp}`,
+      limit: 10,
+      windowMs: 15 * 60 * 1000,
+      requestId: ctx.requestId,
+    });
+
     const data = await ctx.db.login({
       collection: "users",
       data: {

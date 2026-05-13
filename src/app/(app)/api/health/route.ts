@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { logEvent, serializeError } from "@/lib/observability";
 import { getServerEnvStatus } from "@/lib/env";
+import { getPublicEnvStatus } from "@/lib/public-env";
 
 export const dynamic = "force-dynamic";
 
@@ -40,12 +41,13 @@ const checkDatabase = async (): Promise<HealthCheck> => {
 };
 
 const checkEnv = (): HealthCheck => {
-  const status = getServerEnvStatus();
+  const statuses = [getServerEnvStatus(), getPublicEnvStatus()];
+  const issues = statuses.flatMap((status) => status.issues);
 
-  if (!status.ok) {
+  if (issues.length > 0) {
     return {
       ok: false,
-      error: status.issues
+      error: issues
         .map((issue) => `${issue.path}: ${issue.message}`)
         .join("; "),
     };
